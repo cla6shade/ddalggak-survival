@@ -1,0 +1,275 @@
+# The nine animations that make up one character.
+#
+# `kind` decides how each one is produced:
+#   sheet  a rows x cols grid drawn by the model in one image (one model call)
+#   rig    composed from an already-finished sprite by moving rectangles by whole
+#          pixels (no model call at all, and the silhouette cannot boil)
+#
+# Order matters. The `role = "base"` entry runs first and becomes the reference
+# and the palette donor for every other view, so the character is designed once
+# and only ever re-posed. A `rig` entry needs its target's pixel sprite to exist,
+# which is why it comes after the sheets.
+#
+# The prose here is character-agnostic on purpose. The user writes one front-on
+# description of the character; `view_note` is appended to it for views where the
+# camera moved, and says only what changes about what is visible — never anything
+# about who the character is. Add a new animation by adding a block here; nothing
+# in the Python needs to know about it.
+
+# --- 대기 -------------------------------------------------------------------
+[[animation]]
+name = "idle"
+label = "대기"
+kind = "sheet"
+role = "base"
+suffix = ""                       # the base view keeps the plain character id
+layout = { rows = 2, cols = 2 }
+fps = 6
+# The motion keeps the feet planted, so pinning them to a common baseline turns
+# the model's leftover vertical wobble into a clean breathing curve.
+align = "bottom-center"
+motion = """
+a subtle idle breathing loop. Frame 1 is the neutral rest pose. In frame 2 the \
+whole body sinks by a tiny amount and the shoulders drop. Frame 3 is the lowest \
+point of the sag. Frame 4 rises back most of the way toward neutral so the loop \
+is seamless. The sink is only a few percent of the character's height. The feet \
+stay planted on exactly the same spot in all four frames, the arms keep the same \
+pose, and the head keeps the same angle.\
+"""
+
+# --- 옆으로 서기 -------------------------------------------------------------
+# ONE cell, not a grid. Asked for four, the model draws the character four times,
+# and in profile the silhouette is narrow enough that the hair coming out a pixel
+# wider in one cell reads as the whole body inflating and deflating. Nothing in
+# the prompt fixes that reliably, because it is not a mistake — it is what
+# drawing the same thing four times looks like.
+#
+# So the pose is drawn once and the breathing is rigged on top of it (see
+# `sidebreathe` below). A rigged frame is the same pixels moved by a whole
+# number, so the silhouette cannot change between frames at all.
+[[animation]]
+name = "sideidle"
+label = "옆으로 서기"
+kind = "sheet"
+suffix = "_sideidle"
+layout = { rows = 1, cols = 1 }
+facing = """
+seen from the side in a strict flat profile view, turned to face the RIGHT edge \
+of the frame — the nose, the chest and the toes of both shoes all point right. \
+This is a pure side view, not a three-quarter view and not angled back toward \
+the viewer, so exactly ONE eye is visible and the character's body is at its \
+narrowest\
+"""
+# The pose lives here rather than in `motion`: a single-cell asset is not a
+# sheet, so the sheet section of the prompt — and with it `motion` — is never
+# assembled at all.
+view_note = """
+This is the same character seen in profile, so only ONE eye and one ear are \
+visible and every paired feature on the far side of the head is hidden behind \
+the near side. Because the far arm and the far leg sit behind the body, draw \
+them in the darker shade of their own material so they read as being behind \
+without needing a line. Nothing about the character's design changes — only \
+which parts of it the camera can see.
+
+The character is STANDING STILL at rest, not walking: both feet are planted flat \
+side by side directly under the body — the far foot almost entirely hidden \
+behind the near one — the legs are straight and together, and both arms hang \
+relaxed and straight down at the sides with the hands empty. No leg is swung \
+forward or lifted, and no arm is swung.\
+"""
+
+# --- 옆으로 걷기 -------------------------------------------------------------
+[[animation]]
+name = "sidewalk"
+label = "옆으로 걷기"
+kind = "sheet"
+suffix = "_sidewalk"
+layout = { rows = 2, cols = 2 }
+fps = 8
+# Measured on the existing side walk: the bottom edge shifts 4px across the bob
+# but 11px between the two grid ROWS, so nearly all of the vertical difference is
+# cell-placement noise. Pinning the baseline leaves the bob as head height.
+align = "bottom-center"
+# Overrides the front-view composition line in prompts/character.md — a side walk
+# cannot satisfy "facing the viewer straight on".
+facing = """
+seen from the side in a strict flat profile view, turned to face the RIGHT edge \
+of the frame — the nose, the chest and the toes of both shoes all point right. \
+This is a pure side view, not a three-quarter view and not angled back toward \
+the viewer, so exactly ONE eye is visible and the character's body is at its \
+narrowest\
+"""
+view_note = """
+This is the same character seen in profile, so only ONE eye and one ear are \
+visible and every paired feature on the far side of the head is hidden behind \
+the near side. Because the far arm and the far leg sit behind the body, draw \
+them in the darker shade of their own material so they read as being behind \
+without needing a line. Nothing about the character's design changes — only \
+which parts of it the camera can see.\
+"""
+motion = """
+a 4-frame side-view walk cycle, walking in place toward the right. Frame 1 is a \
+contact pose: the near leg is swung forward with its foot just about to land, \
+the far leg is stretched back behind the body, the legs are at their widest \
+apart, and the body is at the LOWEST point of its bob. Frame 2 is a passing \
+pose: both legs are together directly under the body, the far leg is hidden \
+almost entirely behind the near leg, and the body is at the HIGHEST point of its \
+bob. Frame 3 swaps which leg leads: the far leg is now swung forward and the \
+near leg is stretched back, legs at their widest, body at its lowest. Frame 4 is \
+a passing pose identical in shape to frame 2, body at its highest, so the cycle \
+loops back into frame 1. Critical: the character faces RIGHT in all four frames \
+— do NOT mirror, flip or turn the drawing, and never let it face left or turn \
+toward the viewer. Only the limbs change; the head and the hair silhouette keep \
+the same shape and hang the same way in every frame. The arms swing gently \
+front-to-back opposite to the legs, staying close to the body, and both hands \
+stay empty throughout. The bob is small — a few percent of the character's \
+height. The character never travels: its horizontal centre stays in exactly the \
+same place in all four frames.\
+"""
+
+# --- 뒤로 서기 ---------------------------------------------------------------
+[[animation]]
+name = "backidle"
+label = "뒤로 서기"
+kind = "sheet"
+suffix = "_backidle"
+layout = { rows = 1, cols = 1 }        # one pose; `backbreathe` supplies the motion
+facing = """
+seen from directly BEHIND, turned away from the viewer and facing into the \
+screen. The back of the head and the backs of both shoes are what the camera \
+sees. This is a true rear view, not a three-quarter view and not turned back \
+over a shoulder\
+"""
+view_note = """
+IMPORTANT: the reference shows this same character from the FRONT, and you are \
+drawing that character's BACK. No facial feature is visible at all — no eyes, \
+no eye shadows, no nose, no mouth, and no ear detail beyond the outer edge of \
+an ear. The back of the head is one solid mass of hair, with the same silhouette \
+and the same parting as the reference. Anything that hangs down the front of the \
+character — a tie, a lanyard, a pendant, a printed motif — is not visible from \
+here, apart from at most the thin band of it at the back of the neck. Nothing \
+about the character's design changes; the camera simply moved behind it.
+
+The character is STANDING STILL at rest, not walking: both feet are planted flat \
+and level with a small even gap between them, the legs are straight, and both \
+arms hang relaxed and straight down at the sides with the hands empty. Neither \
+leg is swung forward or lifted, and neither arm is swung.\
+"""
+
+# --- 뒤로 걷기 ---------------------------------------------------------------
+[[animation]]
+name = "backwalk"
+label = "뒤로 걷기"
+kind = "sheet"
+suffix = "_backwalk"
+layout = { rows = 2, cols = 2 }
+fps = 8
+align = "bottom-center"
+facing = """
+seen from directly BEHIND, turned away from the viewer and facing into the \
+screen. The back of the head and the backs of both shoes are what the camera \
+sees. This is a true rear view, not a three-quarter view and not turned back \
+over a shoulder\
+"""
+view_note = """
+IMPORTANT: the reference shows this same character from the FRONT, and you are \
+drawing that character's BACK. No facial feature is visible at all — no eyes, \
+no eye shadows, no nose, no mouth, and no ear detail beyond the outer edge of \
+an ear. The back of the head is one solid mass of hair, with the same silhouette \
+and the same parting as the reference. Anything that hangs down the front of the \
+character — a tie, a lanyard, a pendant, a printed motif — is not visible from \
+here, apart from at most the thin band of it at the back of the neck. Nothing \
+about the character's design changes; the camera simply moved behind it.\
+"""
+motion = """
+a 4-frame walk cycle seen from behind, walking in place away from the viewer. \
+Frame 1 is a contact pose: the character's left leg is forward and its foot is \
+lifted slightly, the right leg is back and planted, and the body is at the \
+LOWEST point of its bob. Frame 2 is a passing pose: both legs are together \
+directly under the body and the body is at the HIGHEST point of its bob. Frame 3 \
+swaps which leg leads: the right leg is forward and lifted, the left leg is back \
+and planted, body at its lowest. Frame 4 is a passing pose identical in shape to \
+frame 2, body at its highest, so the cycle loops back into frame 1. Only the \
+legs swap — do NOT mirror or flip the drawing, and never turn the character to \
+face the viewer in any frame. The hair silhouette and the parting stay identical \
+in all four frames. The arms swing gently opposite to the legs but never cross \
+the body, and both hands stay empty throughout. The bob is small — a few percent \
+of the character's height. The character never travels sideways: its horizontal \
+centre stays in exactly the same place in all four frames.\
+"""
+
+# --- 서 있는 호흡 (리깅) ------------------------------------------------------
+# The breathing the side and back idles do not draw for themselves.
+#
+# `upper` is everything above where the legs start, so sinking it a pixel or two
+# is literally "the body drops while the feet stay planted" — the same motion the
+# front idle sheet is asked to draw, done as an offset instead of a redrawing.
+# Down rather than up, because the sprite fills its frame: shifting the whole
+# character up would push the hair off the top edge, while sinking the upper body
+# only moves it further inside the canvas.
+[[animation]]
+name = "sidebreathe"
+label = "옆으로 서기 호흡"
+kind = "rig"
+target = "sideidle"
+clip = "breathe"
+fps = 6
+needs_parts = ["upper"]
+frames = [
+  { upper = [0, 0] },     # neutral
+  { upper = [0, 1] },     # sinking
+  { upper = [0, 2] },     # lowest
+  { upper = [0, 1] },     # rising back, so the loop closes
+]
+
+[[animation]]
+name = "backbreathe"
+label = "뒤로 서기 호흡"
+kind = "rig"
+target = "backidle"
+clip = "breathe"
+fps = 6
+needs_parts = ["upper"]
+frames = [
+  { upper = [0, 0] },
+  { upper = [0, 1] },
+  { upper = [0, 2] },
+  { upper = [0, 1] },
+]
+
+# --- 앞으로 걷기 (리깅) -------------------------------------------------------
+# Composed from the idle sprite rather than drawn: a front-on walk is pure
+# translation, and translation never resamples a pixel, so the frames come out
+# exactly as clean as the base sprite. Asking the model for it instead would risk
+# the silhouette boiling for motion that is four integer offsets.
+[[animation]]
+name = "frontwalk"
+label = "앞으로 걷기"
+kind = "rig"
+target = "idle"
+clip = "walk"
+fps = 8
+needs_parts = ["leg_l", "leg_r"]
+frames = [
+  { leg_l = [-2, -3], leg_r = [1, 0] },   # contact: the left leg swings out and lifts
+  { body = [0, -2] },                     # passing: legs together, body at its highest
+  { leg_l = [1, 0], leg_r = [2, -3] },    # contact: the right leg leads
+  { body = [0, -2] },                     # passing
+]
+
+# --- 대미지 (리깅) ------------------------------------------------------------
+[[animation]]
+name = "hurt"
+label = "대미지"
+kind = "rig"
+target = "idle"
+clip = "hurt"
+fps = 12
+repeat = 0                        # a hit plays once; it does not loop
+needs_parts = []                  # `body` is built in — it shifts the whole frame
+frames = [
+  { body = [-2, 0] },
+  { body = [2, -1] },
+  { body = [-1, 0] },
+  { body = [0, 0] },
+]

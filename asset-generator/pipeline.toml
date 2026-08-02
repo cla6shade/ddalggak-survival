@@ -1,0 +1,85 @@
+# Global defaults for the asset pipeline.
+# Every key under [prompt], [pixel] and [chroma] can be overridden per asset
+# in a spec file; [category.*] supplies the per-category default size.
+
+[codex]
+sandbox = "workspace-write"
+timeout_sec = 900
+
+[chroma]
+# Subjects that are themselves green should override this with "#ff00ff".
+key_color = "#00ff00"
+transparent_threshold = 12
+opaque_threshold = 220
+
+[prompt]
+# Tones allowed per material: 1 base fill + (value_steps - 1) darker shades.
+# 2 keeps large light areas from turning into speckle when downscaled.
+value_steps = 2
+# Which way the character is turned. The composition line in prompts/character.md
+# would otherwise pin every sprite to a front view, which a side-on walk cannot
+# satisfy — so the view is a knob instead of a hardcoded sentence.
+facing = "facing the viewer straight on"
+
+[pixel]
+colors = 16
+alpha_threshold = 128
+# How the subject is separated from what is behind it.
+#   chroma  generated on a flat key colour, removed by hue
+#   flood   hand-supplied art on a flat field, removed from the border inward.
+#           Use this when the flat field is close in colour to part of the art —
+#           a hue test would eat both, a border flood only eats what it reaches.
+#   opaque  no background at all; the image is the subject, edge to edge
+background = "chroma"
+# How the cut-out art is placed on the target canvas.
+#   contain  scale to fit, centred — the default for a sprite in its own frame
+#   bottom   scale to fit, sitting on the bottom edge, so a prop's base lands on
+#            the floor at origin (0.5, 1) no matter how tall the prop is
+#   fill     no trim, no padding: the whole image becomes the whole canvas
+fit = "contain"
+# Generation is lineless; the outline is grown here, after downscaling, so it
+# stays a crisp 1px line instead of a blurred fringe.
+outline_width = 1
+outline_color = "#1a1420"
+preview_scale = 8
+# zoom for the per-animation GIFs written to dist/
+gif_scale = 4
+
+[animation]
+fps = 8
+repeat = -1          # Phaser convention: -1 loops forever
+# How frames are registered to each other before downscaling.
+#   none          trust the sheet exactly — required for jumps and lunges
+#   center-x      cancel horizontal drift, keep vertical motion (default)
+#   bottom-center also plant the feet on a common baseline
+# The model wobbles a sprite a few pixels sideways between grid cells, which
+# reads as jitter rather than motion, so cancelling it is the better default.
+align = "center-x"
+
+[atlas]
+# 1px extrude + 2px padding: enough that a filtered or fractionally-scaled draw
+# can never sample a neighbouring sprite.
+extrude = 1
+padding = 2
+
+[category.character]
+size = 64
+
+[category.icon]
+size = 32
+
+[category.effect]
+size = 32
+
+# World objects, drawn at the same scale and viewing angle as the characters.
+[category.prop]
+size = 64
+fit = "bottom"
+
+# Seamless floor materials. Opaque, so no chroma key and nothing to trim; an
+# outline would draw a black grid across the floor once the tile repeats.
+[category.tile]
+size = 32
+background = "opaque"
+fit = "fill"
+outline_width = 0
