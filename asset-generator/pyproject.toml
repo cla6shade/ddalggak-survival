@@ -1,0 +1,12 @@
+[project]
+name = "asset-generator"
+version = "0.1.0"
+description = "Pixel-art asset generator for ddalggak survival: prompt to atlas, with a UI"
+requires-python = ">=3.11"
+dependencies = [
+    "nicegui>=2.0",
+    "pillow>=10",
+]
+
+[tool.uv]
+package = false
