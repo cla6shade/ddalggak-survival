@@ -11,6 +11,9 @@ node_modules/
 asset-generator/assets/
 asset-generator/dist/
 
+# 무엇을 만들지 적어둔 목록. 만드는 사람의 작업 파일이라 공개하지 않습니다.
+asset-generator/catalog.toml
+
 # codex 를 띄울 때 생기는 브라우저 프로필
 asset-generator/chrome-profile/
 
