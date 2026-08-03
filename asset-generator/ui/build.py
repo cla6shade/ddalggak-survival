@@ -24,7 +24,7 @@ def render() -> None:
             ui.button("아틀라스 빌드", icon="build", on_click=_build).props("unelevated")
 
         ui.label("픽셀 스프라이트가 모두 준비된 에셋만 아틀라스에 들어갑니다. "
-                 "타일은 GPU 반복 래핑이 필요해서 아틀라스 대신 개별 텍스처로 나갑니다.") \
+                 "타일과 배경은 아틀라스 대신 개별 텍스처로 나갑니다.") \
           .classes("text-sm text-gray-500")
 
         results()
@@ -72,12 +72,26 @@ def results() -> None:
                                   PIXELATED + "width:96px;height:96px;border-radius:4px;")
                         ui.label(path.stem).classes("text-xs text-gray-500")
 
+    backgrounds = (sorted((DIST / "backgrounds").glob("*.png"))
+                   if (DIST / "backgrounds").is_dir() else [])
+    if backgrounds:
+        with ui.card().classes("w-full"):
+            ui.label(f"배경 텍스처 {len(backgrounds)}개").classes("font-medium")
+            with ui.row().classes("gap-4 flex-wrap"):
+                for path in backgrounds:
+                    with ui.column().classes("items-center gap-1"):
+                        raw_image(file_url(path), PIXELATED +
+                                  "width:192px;height:192px;object-fit:contain;"
+                                  "border-radius:4px;")
+                        ui.label(path.stem).classes("text-xs text-gray-500")
+
 
 async def _build() -> None:
     try:
         store.reload()
         stats = await run.io_bound(P.build_atlas, store.assets, store.config)
         reports = await run.io_bound(P.check_tiles, store.assets)
+        await run.io_bound(P.export_backgrounds, store.assets)
         problems = await run.io_bound(P.verify_atlas)
 
         seams = [r for r in reports if not r.ok]

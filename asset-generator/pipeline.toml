@@ -83,3 +83,12 @@ size = 32
 background = "opaque"
 fit = "fill"
 outline_width = 0
+
+# Full-screen environment art. Like tiles, backgrounds own every pixel and ship
+# as individual textures; unlike tiles, they are composed scenes and need not wrap.
+[category.background]
+size = 256
+colors = 32
+background = "opaque"
+fit = "fill"
+outline_width = 0

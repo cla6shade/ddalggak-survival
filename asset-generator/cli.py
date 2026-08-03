@@ -337,6 +337,11 @@ def run_build() -> int:
         mark = "OK" if tile.ok else "이음매"
         log(f"  {tile.id} ({tile.size}px): 가로 {tile.horizontal:.2f} 세로 {tile.vertical:.2f} — {mark}")
 
+    backgrounds = P.export_backgrounds(assets)
+    if backgrounds:
+        stage("배경 내보내기")
+        log(f"  {len(backgrounds)}장 → dist/backgrounds/")
+
     stage("검증")
     problems = P.verify_atlas()
     for problem in problems:

@@ -16,11 +16,11 @@ from pathlib import Path
 from .paths import ROOT
 
 ASSETS = ROOT / "assets"
-CATEGORIES = ("character", "icon", "effect", "prop", "tile")
+CATEGORIES = ("character", "icon", "effect", "prop", "tile", "background")
 SPEC_NAME = "asset.toml"
-# A tile has to stay its own texture: GPU repeat wrapping needs one, and pack.py
-# extrudes every sprite by a pixel, which would smear the seam it must not have.
-STANDALONE = ("tile",)
+# Tiles need GPU repeat wrapping and backgrounds are large full-screen images, so
+# neither belongs in the sprite atlas.
+STANDALONE = ("tile", "background")
 
 # Keys an [[asset]] block may override; everything else comes from pipeline.toml.
 OVERRIDABLE = (

@@ -26,6 +26,7 @@ CATEGORY_LABELS = {
     "icon": "아이콘",
     "effect": "이펙트",
     "tile": "타일",
+    "background": "배경",
 }
 CATEGORY_ICONS = {
     "character": "person",
@@ -33,6 +34,7 @@ CATEGORY_ICONS = {
     "icon": "star",
     "effect": "auto_awesome",
     "tile": "grid_on",
+    "background": "landscape",
 }
 CATEGORY_HINTS = {
     "character": "대기·앞걷기·뒤걷기·옆걷기·대미지 5종을 한 번에 만듭니다",
@@ -40,6 +42,7 @@ CATEGORY_HINTS = {
     "icon": "인벤토리·UI 아이템 아이콘",
     "effect": "타격·획득 같은 VFX 스프라이트",
     "tile": "이음매 없이 반복되는 바닥 재질",
+    "background": "화면 전체를 채우는 픽셀 환경 배경",
 }
 
 

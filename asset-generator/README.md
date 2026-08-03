@@ -185,6 +185,7 @@ assets/<category>/<id>/
 | `animations.json` | Phaser `anims.fromJSON` 페이로드 |
 | `atlas.d.ts` | 프레임 키·애니메이션 키 union 타입 |
 | `tiles/*.png` | 타일은 아틀라스에 넣지 않습니다. GPU 반복 래핑에는 자기 텍스처가 필요하고, 패킹의 1px 익스트루드가 없어야 할 이음매를 만들기 때문입니다 |
+| `backgrounds/*.png` | 생성 후 전체 화면을 색상 양자화·픽셀화한 독립 배경 텍스처입니다 |
 
 ## 설정
 
@@ -196,7 +197,7 @@ assets/<category>/<id>/
 - `key_color` — 피사체 자체가 초록이면 `#ff00ff` 등으로 바꿉니다. 안 그러면 배경과 함께
   피사체까지 지워집니다
 - `background` — `chroma`(키 색상 제거) / `flood`(테두리부터 채우기, 손으로 그린 흰 배경 아트용) /
-  `opaque`(배경 없음, 타일)
+  `opaque`(분리할 바깥 배경 없음, 타일·전체 화면 배경)
 - `align` — 시트 프레임 간 드리프트 보정. `bottom-center`는 발을 공통 베이스라인에 고정합니다
 
 ## 구조

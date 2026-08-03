@@ -1,6 +1,6 @@
 """Making a new asset.
 
-Two shapes of work share this page. A prop, icon, effect or tile is one asset:
+Two shapes of work share this page. A prop, icon, effect, tile or background is one asset:
 describe it, draw it, done. A character is five, and they are not independent —
 the front view is the character, and the other four are that drawing re-posed. So
 a character runs as an ordered plan that stops after every step, because the only
@@ -296,7 +296,7 @@ def _install_reference(asset_dir: Path, reference: Reference) -> tuple[str, str]
 
 
 # --------------------------------------------------------------------------
-# single asset (prop / icon / effect / tile)
+# single asset (prop / icon / effect / tile / background)
 # --------------------------------------------------------------------------
 
 def _single_form(category: str) -> None:
@@ -382,6 +382,8 @@ def _placeholder(category: str) -> str:
         "effect": "a four-pointed impact burst with fat blunt spikes",
         "tile": "worn beige linoleum with a cross of slightly darker seams "
                 "through the middle",
+        "background": "a cramped late-night office with rows of empty desks, "
+                      "cold ceiling lights, and dark windows along the back wall",
     }.get(category, "")
 
 

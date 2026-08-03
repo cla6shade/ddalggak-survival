@@ -11,7 +11,7 @@ Stage order for one asset:
     pack -> tiles -> verify                    (whole-project, writes dist/)
 
 Everything after generate is deterministic, so re-running the tail is always
-cheap and safe. Only `build_atlas` and `check_tiles` touch dist/.
+cheap and safe. Only the project-wide build/export stages touch dist/.
 """
 
 from __future__ import annotations
@@ -279,7 +279,8 @@ def run_rig(asset: Asset, config: dict, only: str | None = None) -> dict[str, li
 def build_atlas(all_assets: list[Asset], config: dict) -> dict:
     """Pack every asset that has a pixel sprite — an atlas is all-or-nothing.
 
-    Standalone assets (tiles) are skipped: they ship as their own textures.
+    Standalone assets (tiles and backgrounds) are skipped: they ship as their
+    own textures.
     """
     sources: list[tuple[str, Path]] = []
     have: set[str] = set()
@@ -358,7 +359,7 @@ class TileReport:
 
 def check_tiles(all_assets: list[Asset]) -> list[TileReport]:
     """Copy standalone textures to dist/tiles/ and check that they really tile."""
-    tiles = [a for a in all_assets if a.standalone and a.pixel.exists()]
+    tiles = [a for a in all_assets if a.category == "tile" and a.pixel.exists()]
     if not tiles:
         return []
 
@@ -376,6 +377,29 @@ def check_tiles(all_assets: list[Asset]) -> list[TileReport]:
     if types.exists():
         types.write_text(types.read_text() + "\nexport type TileTexture =\n" + names + ";\n")
     return reports
+
+
+def export_backgrounds(all_assets: list[Asset]) -> list[Path]:
+    """Copy full-screen background textures to dist/backgrounds/."""
+    backgrounds = [a for a in all_assets
+                   if a.category == "background" and a.pixel.exists()]
+    if not backgrounds:
+        return []
+
+    out = DIST / "backgrounds"
+    out.mkdir(parents=True, exist_ok=True)
+    written = []
+    for asset in sorted(backgrounds, key=lambda a: a.id):
+        dest = out / f"{asset.id}.png"
+        shutil.copyfile(asset.pixel, dest)
+        written.append(dest)
+
+    names = "\n".join(f"  | {json.dumps(path.stem)}" for path in written)
+    types = DIST / "atlas.d.ts"
+    if types.exists():
+        types.write_text(types.read_text() +
+                         "\nexport type BackgroundTexture =\n" + names + ";\n")
+    return written
 
 
 def verify_atlas() -> list[str]:
