@@ -10,6 +10,8 @@ place to stop between stages and see what came out.
 
 from __future__ import annotations
 
+import os
+
 from nicegui import app, ui
 
 from core.spec import ASSETS
@@ -65,4 +67,5 @@ def page_build() -> None:
 # restart, so save a .py while codex is drawing and you lose that run.
 #
 # The port is fixed because a stable http://localhost:8111 is worth something.
-ui.run(title="asset-generator", favicon="🎨", dark=None, show=False, port=8111)
+ui.run(title="asset-generator", favicon="🎨", dark=None,
+       show=os.environ.get("ASSET_GENERATOR_OPEN_BROWSER") == "1", port=8111)
