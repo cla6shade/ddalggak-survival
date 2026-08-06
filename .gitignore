@@ -17,8 +17,13 @@ asset-generator/catalog.toml
 # codex 를 띄울 때 생기는 브라우저 프로필
 asset-generator/chrome-profile/
 
-# 빌드 산출물
+# 빌드 산출물과 vite 가 남기는 캐시
 web/dist/
+.vite
+
+# Arcweave 에서 뽑은 시나리오 원본. 빌드도 런타임도 읽지 않고, 이슈 정의는
+# web/src/game/issues/ 로 이미 옮겨 적었습니다.
+scenario.json
 
 # macOS
 .DS_Store
