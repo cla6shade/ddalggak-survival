@@ -1,0 +1,173 @@
+{
+  "anims": [
+    {
+      "key": "founder",
+      "type": "frame",
+      "frames": [
+        {
+          "key": "game",
+          "frame": "founder_000"
+        },
+        {
+          "key": "game",
+          "frame": "founder_001"
+        },
+        {
+          "key": "game",
+          "frame": "founder_002"
+        },
+        {
+          "key": "game",
+          "frame": "founder_003"
+        }
+      ],
+      "frameRate": 6,
+      "repeat": -1
+    },
+    {
+      "key": "founder_backidle_breathe",
+      "type": "frame",
+      "frames": [
+        {
+          "key": "game",
+          "frame": "founder_backidle_breathe_000"
+        },
+        {
+          "key": "game",
+          "frame": "founder_backidle_breathe_001"
+        },
+        {
+          "key": "game",
+          "frame": "founder_backidle_breathe_002"
+        },
+        {
+          "key": "game",
+          "frame": "founder_backidle_breathe_003"
+        }
+      ],
+      "frameRate": 6,
+      "repeat": -1
+    },
+    {
+      "key": "founder_backwalk",
+      "type": "frame",
+      "frames": [
+        {
+          "key": "game",
+          "frame": "founder_backwalk_000"
+        },
+        {
+          "key": "game",
+          "frame": "founder_backwalk_001"
+        },
+        {
+          "key": "game",
+          "frame": "founder_backwalk_002"
+        },
+        {
+          "key": "game",
+          "frame": "founder_backwalk_003"
+        }
+      ],
+      "frameRate": 8,
+      "repeat": -1
+    },
+    {
+      "key": "founder_hurt",
+      "type": "frame",
+      "frames": [
+        {
+          "key": "game",
+          "frame": "founder_hurt_000"
+        },
+        {
+          "key": "game",
+          "frame": "founder_hurt_001"
+        },
+        {
+          "key": "game",
+          "frame": "founder_hurt_002"
+        },
+        {
+          "key": "game",
+          "frame": "founder_hurt_003"
+        }
+      ],
+      "frameRate": 12,
+      "repeat": 0
+    },
+    {
+      "key": "founder_sideidle_breathe",
+      "type": "frame",
+      "frames": [
+        {
+          "key": "game",
+          "frame": "founder_sideidle_breathe_000"
+        },
+        {
+          "key": "game",
+          "frame": "founder_sideidle_breathe_001"
+        },
+        {
+          "key": "game",
+          "frame": "founder_sideidle_breathe_002"
+        },
+        {
+          "key": "game",
+          "frame": "founder_sideidle_breathe_003"
+        }
+      ],
+      "frameRate": 6,
+      "repeat": -1
+    },
+    {
+      "key": "founder_sidewalk",
+      "type": "frame",
+      "frames": [
+        {
+          "key": "game",
+          "frame": "founder_sidewalk_000"
+        },
+        {
+          "key": "game",
+          "frame": "founder_sidewalk_001"
+        },
+        {
+          "key": "game",
+          "frame": "founder_sidewalk_002"
+        },
+        {
+          "key": "game",
+          "frame": "founder_sidewalk_003"
+        }
+      ],
+      "frameRate": 8,
+      "repeat": -1
+    },
+    {
+      "key": "founder_walk",
+      "type": "frame",
+      "frames": [
+        {
+          "key": "game",
+          "frame": "founder_walk_000"
+        },
+        {
+          "key": "game",
+          "frame": "founder_walk_001"
+        },
+        {
+          "key": "game",
+          "frame": "founder_walk_002"
+        },
+        {
+          "key": "game",
+          "frame": "founder_walk_003"
+        }
+      ],
+      "frameRate": 8,
+      "repeat": -1
+    }
+  ],
+  "globalTimeScale": 1
+}
