@@ -19,16 +19,18 @@ export class EndingManager {
     return this.result
   }
 
+  /** 선택 결과나 시간 경과로 즉시 발생한 사건 엔딩을 확정합니다. */
+  trigger(id: EndingResult['id'], context: EndingContext): EndingResult {
+    this.result ??= { id, snapshot: createEndingSnapshot(context) }
+    return this.result
+  }
+
   evaluate(context: EndingContext): EndingResult | null {
     if (this.result) return this.result
 
     const matched = this.conditions.find((condition) => condition.matches(context))
     if (!matched) return null
 
-    this.result = {
-      id: matched.id,
-      snapshot: createEndingSnapshot(context),
-    }
-    return this.result
+    return this.trigger(matched.id, context)
   }
 }
