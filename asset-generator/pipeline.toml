@@ -24,6 +24,18 @@ facing = "facing the viewer straight on"
 [pixel]
 colors = 16
 alpha_threshold = 128
+# Whether to convert the cut-out art into pixel art at all.
+#   true   downscale to `size`, quantize to `colors`, grow the outline
+#   false  ship the cut-out image untouched, at whatever size it already is.
+#          For art that is finished when it arrives — a seamless texture has no
+#          silhouette to protect and nothing to gain from a smaller palette,
+#          and squeezing a wide strip onto a square canvas only distorts it.
+pixelize = true
+# How far a tile may miss wrapping before `build` calls it a seam. The number is
+# the wrap step over the average interior step, so 1.0 is "as ordinary as any
+# other pair of adjacent lines". Raise it per asset for a texture that is not
+# meant to wrap on both axes — a wall strip only repeats sideways.
+seam_limit = 2.0
 # How the subject is separated from what is behind it.
 #   chroma  generated on a flat key colour, removed by hue
 #   flood   hand-supplied art on a flat field, removed from the border inward.
@@ -76,13 +88,17 @@ size = 32
 size = 64
 fit = "bottom"
 
-# Seamless floor materials. Opaque, so no chroma key and nothing to trim; an
-# outline would draw a black grid across the floor once the tile repeats.
+# Seamless materials. Opaque, so no chroma key and nothing to trim; an outline
+# would draw a black grid across the surface once the tile repeats.
+#
+# Tiles are not pixelized: they ship exactly as they arrive. `size` and `fit`
+# stay only as defaults for anything that turns pixelization back on.
 [category.tile]
 size = 32
 background = "opaque"
 fit = "fill"
 outline_width = 0
+pixelize = false
 
 # Full-screen environment art. Like tiles, backgrounds own every pixel and ship
 # as individual textures; unlike tiles, they are composed scenes and need not wrap.

@@ -3,7 +3,7 @@ Reference image (most important requirement, overrides everything else): the ima
 Copy these from the reference exactly, at the same size relative to the head:
 
 - Face: the eye shape and how thick the dash is, the small dark half-moon under the eye, the size and placement of the nose mark, and the shape of the mouth and how far below the eyes it sits.
-- Expression: exactly as tired and as blank as the reference — no more sad, no more comic, no new blush, no new sweat drop, no added marks of any kind on the face.
+- Expression: whatever expression the reference wears, at exactly that strength — if it is smiling, keep that same smile with the corners turned up the same amount; if it is blank, keep it blank. Never flatten a mouth into a straight line it does not have. No more sad, no more comic, no new blush, no new sweat drop, no added marks of any kind on the face.
 - Head: the same size relative to the body, the same hair mass, the same spikiness, the same parting.
 - Hands: the same stubby shape, and resting in the same place relative to the torso.
 - Clothing: the same collar opening, the same tie width and length, the same sleeve roll, the same shoe shape.

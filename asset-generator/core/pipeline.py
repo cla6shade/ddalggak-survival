@@ -204,12 +204,37 @@ def load_palette(asset: Asset, all_assets: list[Asset]) -> list[tuple[int, int, 
     return [tuple(c) for c in json.loads(donor.palette_file.read_text())]
 
 
+def copy_as_sprite(asset: Asset, preview_scale: int) -> list[Path]:
+    """Ship the cut-out image as the sprite, untouched.
+
+    For art that is already final when it arrives. Nothing is resized, so a
+    non-square strip keeps its proportions, and nothing is quantized, so a
+    texture keeps every tone it was drawn with.
+
+    No `@Nx` preview is written: the point of one is to make a 32px sprite
+    legible, and these are already big enough to look at.
+    """
+    from PIL import Image
+
+    asset.pixel.parent.mkdir(parents=True, exist_ok=True)
+    image = Image.open(asset.cut).convert("RGBA")
+    image.save(asset.pixel)
+
+    # Keep the palette contract — another asset may still want to borrow it.
+    used = sorted({p[:3] for p in image.getdata() if p[3] >= asset.alpha_threshold})
+    asset.palette_file.write_text(json.dumps([list(c) for c in used]))
+    return [asset.pixel]
+
+
 def run_pixelize(asset: Asset, all_assets: list[Asset], config: dict) -> list[Path]:
     """Downscale, quantize and outline. Returns the sprite paths written."""
     if not asset.cut.exists():
         raise RuntimeError(f"{asset.id}: no cut-out image yet; run cutout first")
 
     preview_scale = config.get("pixel", {}).get("preview_scale", 8)
+    if not asset.pixelize:
+        return copy_as_sprite(asset, preview_scale)
+
     written, used = pixelize_image(
         src=asset.cut,
         dst=asset.pixel,
@@ -351,10 +376,11 @@ class TileReport:
     size: int
     horizontal: float
     vertical: float
+    limit: float
 
     @property
     def ok(self) -> bool:
-        return max(self.horizontal, self.vertical) <= SEAM_LIMIT
+        return max(self.horizontal, self.vertical) <= self.limit
 
 
 def check_tiles(all_assets: list[Asset]) -> list[TileReport]:
@@ -370,7 +396,7 @@ def check_tiles(all_assets: list[Asset]) -> list[TileReport]:
         dest = out / f"{asset.id}.png"
         shutil.copyfile(asset.pixel, dest)
         h, v = tile_mod.seam_ratios(dest)
-        reports.append(TileReport(asset.id, asset.size, h, v))
+        reports.append(TileReport(asset.id, asset.size, h, v, asset.seam_limit))
 
     names = "\n".join(f"  | {json.dumps(r.id)}" for r in reports)
     types = DIST / "atlas.d.ts"

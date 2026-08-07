@@ -27,6 +27,7 @@ OVERRIDABLE = (
     "size", "key_color", "transparent_threshold", "opaque_threshold",
     "value_steps", "facing", "colors", "alpha_threshold", "outline_width",
     "outline_color", "fps", "repeat", "align", "background", "fit",
+    "pixelize", "seam_limit",
 )
 ALIGN_MODES = ("none", "center-x", "bottom-center")
 FIT_MODES = ("contain", "bottom", "fill")
@@ -57,6 +58,8 @@ class Asset:
     align: str
     background: str
     fit: str
+    pixelize: bool        # False ships the cut-out image as-is, at its own size
+    seam_limit: float     # how far a tile may miss wrapping before the build calls it
     rows: int
     cols: int
     motion: str
