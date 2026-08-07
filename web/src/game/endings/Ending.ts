@@ -3,7 +3,13 @@ import type { IssueManager } from '../IssueManager'
 import type { ProductStatus } from '../stats/ProductStatus'
 import type { PlayerStatus } from '../stats/PlayerStatus'
 
-export type EndingId = 'bankrupt' | 'burnout'
+export type EndingId =
+  | 'bankrupt'
+  | 'burnout'
+  | 'hacked'
+  | 'idea-stolen'
+  | 'lawsuit'
+  | 'consumer-report'
 
 /** 엔딩 규칙이 읽을 수 있는 한 판의 현재 상태. */
 export interface EndingContext {

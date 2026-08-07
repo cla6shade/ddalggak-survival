@@ -15,7 +15,8 @@ import { BottomSheet } from '@/ui/screens/BottomSheet'
 import { ToastStack } from '@/ui/screens/ToastStack'
 import { EndingScreen } from '@/ui/screens/EndingScreen'
 import { EndingManager } from '@/game/endings/EndingManager'
-import type { EndingContext, EndingResult } from '@/game/endings/Ending'
+import { rollChoiceEnding, rollsLawsuit } from '@/game/endings/EndingEvents'
+import type { EndingContext, EndingId, EndingResult } from '@/game/endings/Ending'
 import type { Issue, ResolveContext } from '@/game/issues/Issue'
 import type { IssueOption } from '@/game/issues/IssueOption'
 import type { ActionContext, RoomAction, RoomActionMenu } from '@/game/actions/RoomAction'
@@ -154,14 +155,15 @@ class Session {
       const spawned = this.issues.spawnRandomIssue(this.rng)
       if (spawned) this.showIssueToast(spawned)
     }
-    if (outcome.stolen) {
-      this.toasts?.push('아이디어 도난', option.title, 'bad')
-      console.log(`[issue] 아이디어 도난 — ${issue.title} / ${option.title}`)
-    }
 
-    // 선택지 비용으로 자원이 바닥난 순간 먼저 끝냅니다. 아래 시간 정산에서
-    // 매출이 들어와 0원을 잠시 지나친 사실이 사라지면 "바닥나면 종료"가 아닙니다.
+    // 기존 자원 고갈 엔딩을 확률 사건보다 먼저 확정합니다.
     if (this.checkEnding()) return
+
+    const eventEnding = rollChoiceEnding(issue, option, outcome, this.rng)
+    if (eventEnding) {
+      this.triggerEnding(eventEnding)
+      return
+    }
 
     this.clock.advanceMinutes(outcome.minutes)
     this.settleEconomy()
@@ -243,6 +245,12 @@ class Session {
     return true
   }
 
+  /** 선택이나 시간 경과에서 발생한 확률 사건으로 판을 끝냅니다. */
+  private triggerEnding(id: EndingId): void {
+    if (this.phase !== 'running') return
+    this.finish(this.endings.trigger(id, this.createEndingContext()))
+  }
+
   private finish(ending: EndingResult): void {
     this.phase = 'ended'
     this.refreshHud()
@@ -269,6 +277,9 @@ class Session {
     }
     this.hud?.setPlayer(this.player)
     this.hud?.setProduct(this.product, this.yesterday)
+
+    if (this.checkEnding()) return
+    if (rollsLawsuit(minutes, this.rng)) this.triggerEnding('lawsuit')
   }
 
   /** 터진 이슈 하나를 화면에 알립니다 — 토스트, 알림 개수, 열려 있는 판. */
