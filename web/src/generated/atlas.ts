@@ -17,6 +17,10 @@ export type AtlasFrame =
   | "effect_failure"
   | "effect_level_up"
   | "effect_success"
+  | "end_character_000"
+  | "end_character_001"
+  | "end_character_002"
+  | "end_character_003"
   | "ending_acquired"
   | "ending_bankrupt"
   | "ending_burnout"
@@ -25,36 +29,6 @@ export type AtlasFrame =
   | "ending_ramen_profitable"
   | "ending_shutdown"
   | "ending_unicorn"
-  | "founder_000"
-  | "founder_001"
-  | "founder_002"
-  | "founder_003"
-  | "founder_backidle"
-  | "founder_backidle_breathe_000"
-  | "founder_backidle_breathe_001"
-  | "founder_backidle_breathe_002"
-  | "founder_backidle_breathe_003"
-  | "founder_backwalk_000"
-  | "founder_backwalk_001"
-  | "founder_backwalk_002"
-  | "founder_backwalk_003"
-  | "founder_hurt_000"
-  | "founder_hurt_001"
-  | "founder_hurt_002"
-  | "founder_hurt_003"
-  | "founder_sideidle"
-  | "founder_sideidle_breathe_000"
-  | "founder_sideidle_breathe_001"
-  | "founder_sideidle_breathe_002"
-  | "founder_sideidle_breathe_003"
-  | "founder_sidewalk_000"
-  | "founder_sidewalk_001"
-  | "founder_sidewalk_002"
-  | "founder_sidewalk_003"
-  | "founder_walk_000"
-  | "founder_walk_001"
-  | "founder_walk_002"
-  | "founder_walk_003"
   | "goods_shelf"
   | "hud_competency"
   | "hud_issue"
@@ -75,23 +49,58 @@ export type AtlasFrame =
   | "resource_money"
   | "resource_stamina"
   | "resource_time"
+  | "start_character"
+  | "start_character_backidle"
+  | "start_character_backidle_breathe_000"
+  | "start_character_backidle_breathe_001"
+  | "start_character_backidle_breathe_002"
+  | "start_character_backidle_breathe_003"
+  | "start_character_backwalk_000"
+  | "start_character_backwalk_001"
+  | "start_character_backwalk_002"
+  | "start_character_backwalk_003"
+  | "start_character_breathe_000"
+  | "start_character_breathe_001"
+  | "start_character_breathe_002"
+  | "start_character_breathe_003"
+  | "start_character_hurt_000"
+  | "start_character_hurt_001"
+  | "start_character_hurt_002"
+  | "start_character_hurt_003"
+  | "start_character_sideidle"
+  | "start_character_sideidle_breathe_000"
+  | "start_character_sideidle_breathe_001"
+  | "start_character_sideidle_breathe_002"
+  | "start_character_sideidle_breathe_003"
+  | "start_character_sidewalk_000"
+  | "start_character_sidewalk_001"
+  | "start_character_sidewalk_002"
+  | "start_character_sidewalk_003"
+  | "start_character_walk_000"
+  | "start_character_walk_001"
+  | "start_character_walk_002"
+  | "start_character_walk_003"
   | "whiteboard"
   | "work_desk";
 
 export type AnimKey =
-  | "founder"
-  | "founder_backidle_breathe"
-  | "founder_backwalk"
-  | "founder_hurt"
-  | "founder_sideidle_breathe"
-  | "founder_sidewalk"
-  | "founder_walk";
+  | "end_character"
+  | "start_character_backidle_breathe"
+  | "start_character_backwalk"
+  | "start_character_breathe"
+  | "start_character_hurt"
+  | "start_character_sideidle_breathe"
+  | "start_character_sidewalk"
+  | "start_character_walk";
 
 /** 타일은 아틀라스 밖 낱장 PNG 라 BootScene 이 이름을 하나씩 불러야 합니다. */
 export const TILE_TEXTURES = [
-  "cafe_tile",
-  "concrete_bare",
-  "wood_floor",
+  "baseboard_tile",
+  "concrete_tile",
+  "plank_tile",
+  "plaster_tile",
+  "terrazzo_tile",
+  "wood_tile",
 ] as const
 
 export type TileTexture = (typeof TILE_TEXTURES)[number]

@@ -24,6 +24,14 @@ export class WorldObject extends Collidable implements Drawable {
   readonly footprint: Rect | null
   /** 그림만 밀어서 그리는 값. 누르는 자리·막는 면·도착 위치는 그대로입니다. */
   readonly drawOffset: Point
+  /**
+   * 아래 좌표들이 기준으로 삼은 스프라이트 캔버스 크기.
+   *
+   * 같은 물건을 더 큰 캔버스에 다시 그려 넣으면 아틀라스 프레임만 커지는데,
+   * 방 좌표는 그대로여야 합니다. 그래서 방에 놓을 때 이 값에 맞춰 줄여 그립니다 —
+   * 예전 64 캔버스 그림을 160 으로 다시 그리면 0.4 배로 놓입니다.
+   */
+  readonly canvas: number
 
   constructor(
     frame: AtlasFrame,
@@ -34,12 +42,14 @@ export class WorldObject extends Collidable implements Drawable {
     stand: StandSpot,
     footprint: Rect | null = null,
     drawOffset: Point = { x: 0, y: 0 },
+    canvas = 0,
   ) {
     super(x, y, width, height)
     this.frame = frame
     this.stand = stand
     this.footprint = footprint
     this.drawOffset = drawOffset
+    this.canvas = canvas
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -47,10 +57,13 @@ export class WorldObject extends Collidable implements Drawable {
     if (!entry) return
 
     const { image, region } = entry
+    // 그림이 기준 캔버스보다 크게 들어오면 그만큼 줄입니다. `canvas` 가 0 이면
+    // 원본 크기 그대로입니다.
+    const scale = this.canvas > 0 ? this.canvas / region.sourceHeight : 1
     // 원본 프레임의 가로 한가운데·아래끝을 발밑에 맞춘 뒤,
     // 잘려나간 여백을 더해 트림 전 자리로 되돌립니다.
-    const originX = this.x - region.sourceWidth / 2 + this.drawOffset.x
-    const originY = this.y - region.sourceHeight + this.drawOffset.y
+    const originX = this.x - (region.sourceWidth * scale) / 2 + this.drawOffset.x
+    const originY = this.y - region.sourceHeight * scale + this.drawOffset.y
 
     ctx.drawImage(
       image,
@@ -58,10 +71,10 @@ export class WorldObject extends Collidable implements Drawable {
       region.y,
       region.width,
       region.height,
-      originX + region.offsetX,
-      originY + region.offsetY,
-      region.width,
-      region.height,
+      originX + region.offsetX * scale,
+      originY + region.offsetY * scale,
+      region.width * scale,
+      region.height * scale,
     )
   }
 

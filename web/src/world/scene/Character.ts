@@ -24,10 +24,22 @@ const FOOT: FootPrint = { halfWidth: 8, halfDepth: 3 }
 /** 걷는 속도 (방 좌표 단위/초). */
 const WALK_SPEED = 135
 
+/**
+ * 방 좌표가 기준으로 삼은 스프라이트 캔버스 크기.
+ *
+ * 걸음 폭도 발 크기도 물건 배치도 전부 이 크기의 사람을 전제로 정해져 있습니다.
+ * 같은 캐릭터를 더 큰 캔버스에 다시 그려 넣으면 그림만 커지므로, 놓을 때 이 값에
+ * 맞춰 줄입니다 — `WorldObject.canvas` 와 같은 규칙입니다.
+ */
+const CANVAS = 64
+
+// 정면 대기만 이름이 결을 벗어납니다. 다른 시점은 모델이 그린 한 장에 호흡을
+// 리깅으로 얹어 `_<시점>idle_breathe` 가 되는데, 정면은 손으로 넣은 스틸 한 장이라
+// 얹을 대기 시트가 없어 베이스 자체에 호흡을 걸었습니다.
 const ANIMATIONS: Record<'front' | 'back' | 'side', Record<CharacterMotion, AnimKey>> = {
-  front: { idle: 'founder', walk: 'founder_walk' },
-  back: { idle: 'founder_backidle_breathe', walk: 'founder_backwalk' },
-  side: { idle: 'founder_sideidle_breathe', walk: 'founder_sidewalk' },
+  front: { idle: 'start_character_breathe', walk: 'start_character_walk' },
+  back: { idle: 'start_character_backidle_breathe', walk: 'start_character_backwalk' },
+  side: { idle: 'start_character_sideidle_breathe', walk: 'start_character_sidewalk' },
 }
 
 /**
@@ -144,10 +156,11 @@ export class Character extends Collidable implements Drawable, Updatable {
     if (!entry) return
 
     const { image, region } = entry
+    const scale = CANVAS / region.sourceHeight
     // 원본 프레임의 가로 한가운데·아래끝을 발밑에 맞춘 뒤,
     // 잘려나간 여백을 더해 트림 전 자리로 되돌립니다.
-    const originX = this.x - region.sourceWidth / 2
-    const originY = this.y - region.sourceHeight
+    const originX = this.x - (region.sourceWidth * scale) / 2
+    const originY = this.y - region.sourceHeight * scale
     const flipped = isFlipped(this.facing)
 
     if (flipped) {
@@ -164,10 +177,10 @@ export class Character extends Collidable implements Drawable, Updatable {
       region.y,
       region.width,
       region.height,
-      originX + region.offsetX,
-      originY + region.offsetY,
-      region.width,
-      region.height,
+      originX + region.offsetX * scale,
+      originY + region.offsetY * scale,
+      region.width * scale,
+      region.height * scale,
     )
 
     if (flipped) ctx.restore()

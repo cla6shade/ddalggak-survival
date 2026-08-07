@@ -9,7 +9,7 @@ import type { TileTexture } from '@/generated/atlas'
  * 화면 끝까지 빈 자리가 없도록 좌우와 위로 넉넉히 흘려보냅니다.
  */
 export class Wall extends Collidable implements Drawable {
-  tile: TileTexture = 'concrete_bare'
+  tile: TileTexture = 'concrete_tile'
 
   private pattern: CanvasPattern | null = null
 

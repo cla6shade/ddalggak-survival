@@ -1,168 +1,192 @@
 {
   "anims": [
     {
-      "key": "founder",
+      "key": "end_character",
       "type": "frame",
       "frames": [
         {
           "key": "game",
-          "frame": "founder_000"
+          "frame": "end_character_000"
         },
         {
           "key": "game",
-          "frame": "founder_001"
+          "frame": "end_character_001"
         },
         {
           "key": "game",
-          "frame": "founder_002"
+          "frame": "end_character_002"
         },
         {
           "key": "game",
-          "frame": "founder_003"
+          "frame": "end_character_003"
         }
       ],
       "frameRate": 6,
       "repeat": -1
     },
     {
-      "key": "founder_backidle_breathe",
+      "key": "start_character_backidle_breathe",
       "type": "frame",
       "frames": [
         {
           "key": "game",
-          "frame": "founder_backidle_breathe_000"
+          "frame": "start_character_backidle_breathe_000"
         },
         {
           "key": "game",
-          "frame": "founder_backidle_breathe_001"
+          "frame": "start_character_backidle_breathe_001"
         },
         {
           "key": "game",
-          "frame": "founder_backidle_breathe_002"
+          "frame": "start_character_backidle_breathe_002"
         },
         {
           "key": "game",
-          "frame": "founder_backidle_breathe_003"
+          "frame": "start_character_backidle_breathe_003"
         }
       ],
       "frameRate": 6,
       "repeat": -1
     },
     {
-      "key": "founder_backwalk",
+      "key": "start_character_backwalk",
       "type": "frame",
       "frames": [
         {
           "key": "game",
-          "frame": "founder_backwalk_000"
+          "frame": "start_character_backwalk_000"
         },
         {
           "key": "game",
-          "frame": "founder_backwalk_001"
+          "frame": "start_character_backwalk_001"
         },
         {
           "key": "game",
-          "frame": "founder_backwalk_002"
+          "frame": "start_character_backwalk_002"
         },
         {
           "key": "game",
-          "frame": "founder_backwalk_003"
+          "frame": "start_character_backwalk_003"
         }
       ],
       "frameRate": 8,
       "repeat": -1
     },
     {
-      "key": "founder_hurt",
+      "key": "start_character_breathe",
       "type": "frame",
       "frames": [
         {
           "key": "game",
-          "frame": "founder_hurt_000"
+          "frame": "start_character_breathe_000"
         },
         {
           "key": "game",
-          "frame": "founder_hurt_001"
+          "frame": "start_character_breathe_001"
         },
         {
           "key": "game",
-          "frame": "founder_hurt_002"
+          "frame": "start_character_breathe_002"
         },
         {
           "key": "game",
-          "frame": "founder_hurt_003"
+          "frame": "start_character_breathe_003"
+        }
+      ],
+      "frameRate": 6,
+      "repeat": -1
+    },
+    {
+      "key": "start_character_hurt",
+      "type": "frame",
+      "frames": [
+        {
+          "key": "game",
+          "frame": "start_character_hurt_000"
+        },
+        {
+          "key": "game",
+          "frame": "start_character_hurt_001"
+        },
+        {
+          "key": "game",
+          "frame": "start_character_hurt_002"
+        },
+        {
+          "key": "game",
+          "frame": "start_character_hurt_003"
         }
       ],
       "frameRate": 12,
       "repeat": 0
     },
     {
-      "key": "founder_sideidle_breathe",
+      "key": "start_character_sideidle_breathe",
       "type": "frame",
       "frames": [
         {
           "key": "game",
-          "frame": "founder_sideidle_breathe_000"
+          "frame": "start_character_sideidle_breathe_000"
         },
         {
           "key": "game",
-          "frame": "founder_sideidle_breathe_001"
+          "frame": "start_character_sideidle_breathe_001"
         },
         {
           "key": "game",
-          "frame": "founder_sideidle_breathe_002"
+          "frame": "start_character_sideidle_breathe_002"
         },
         {
           "key": "game",
-          "frame": "founder_sideidle_breathe_003"
+          "frame": "start_character_sideidle_breathe_003"
         }
       ],
       "frameRate": 6,
       "repeat": -1
     },
     {
-      "key": "founder_sidewalk",
+      "key": "start_character_sidewalk",
       "type": "frame",
       "frames": [
         {
           "key": "game",
-          "frame": "founder_sidewalk_000"
+          "frame": "start_character_sidewalk_000"
         },
         {
           "key": "game",
-          "frame": "founder_sidewalk_001"
+          "frame": "start_character_sidewalk_001"
         },
         {
           "key": "game",
-          "frame": "founder_sidewalk_002"
+          "frame": "start_character_sidewalk_002"
         },
         {
           "key": "game",
-          "frame": "founder_sidewalk_003"
+          "frame": "start_character_sidewalk_003"
         }
       ],
       "frameRate": 8,
       "repeat": -1
     },
     {
-      "key": "founder_walk",
+      "key": "start_character_walk",
       "type": "frame",
       "frames": [
         {
           "key": "game",
-          "frame": "founder_walk_000"
+          "frame": "start_character_walk_000"
         },
         {
           "key": "game",
-          "frame": "founder_walk_001"
+          "frame": "start_character_walk_001"
         },
         {
           "key": "game",
-          "frame": "founder_walk_002"
+          "frame": "start_character_walk_002"
         },
         {
           "key": "game",
-          "frame": "founder_walk_003"
+          "frame": "start_character_walk_003"
         }
       ],
       "frameRate": 8,
