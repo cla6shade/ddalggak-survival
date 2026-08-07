@@ -829,3 +829,152 @@ img.icon {
     opacity: 0;
   }
 }
+
+/* ─── 엔딩 ───────────────────────────────────────────────────────────────── */
+/* 판이 끝나면 다른 모든 UI 위를 완전히 덮습니다. 결과 숫자는 엔딩 순간에 떠 둔
+   스냅샷이라 뒤의 세상이 멈춘 뒤에도 같은 값으로 남습니다. */
+
+.ending {
+  position: absolute;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  padding: max(var(--space-lg), env(safe-area-inset-top)) var(--space-md)
+    max(var(--space-lg), env(safe-area-inset-bottom));
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 35%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 44%),
+    color-mix(in oklab, var(--ink-deep) 96%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.ending--hidden {
+  display: none;
+}
+
+.ending__card {
+  display: flex;
+  width: min(100%, 28rem);
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) var(--space-lg) var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: 0 28px 80px -28px oklch(0.02 0.01 344 / 0.95);
+  text-align: center;
+  animation: ending-in 420ms var(--ease) backwards;
+}
+
+.ending__icon {
+  width: 112px;
+  height: 112px;
+  margin-bottom: var(--space-xs);
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.ending__eyebrow {
+  color: var(--down);
+  font-size: var(--text-xs);
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+.ending__title {
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-xl), 8vw, var(--text-2xl));
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.ending__description {
+  max-width: 23rem;
+  color: var(--text-dim);
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.ending__stats {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2xs);
+  margin-top: var(--space-xs);
+}
+
+.ending__stat {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--ink);
+}
+
+.ending__stat dt {
+  color: var(--text-faint);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+}
+
+.ending__stat dd {
+  overflow: hidden;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ending__restart {
+  width: 100%;
+  margin-top: var(--space-xs);
+  padding: 12px var(--space-md);
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 110ms var(--ease), filter 140ms var(--ease);
+}
+
+.ending__restart:hover {
+  filter: brightness(1.08);
+}
+
+.ending__restart:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.ending__restart:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+@keyframes ending-in {
+  from {
+    transform: translateY(18px) scale(0.96);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 23rem) {
+  .ending__card {
+    padding-inline: var(--space-md);
+  }
+
+  .ending__icon {
+    width: 88px;
+    height: 88px;
+  }
+}

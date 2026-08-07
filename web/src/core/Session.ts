@@ -13,11 +13,16 @@ import { IconSheet } from '@/assets/IconSheet'
 import { HudManager } from '@/ui/screens/HudManager'
 import { IssuePanel } from '@/ui/screens/IssuePanel'
 import { ToastStack } from '@/ui/screens/ToastStack'
+import { EndingScreen } from '@/ui/screens/EndingScreen'
+import { EndingManager } from '@/game/endings/EndingManager'
+import type { EndingContext, EndingResult } from '@/game/endings/Ending'
 import type { Issue, ResolveContext } from '@/game/issues/Issue'
 import type { IssueOption } from '@/game/issues/IssueOption'
 
 /** 고정 시드. 같은 값이면 같은 판이 재현됩니다. */
 const SEED = 1
+
+type GamePhase = 'running' | 'ended'
 
 /**
  * 게임 세션 하나를 담는 싱글톤 컨테이너
@@ -36,10 +41,13 @@ class Session {
   readonly player = new PlayerStatus()
   readonly product = new ProductStatus()
   readonly issues = new IssueManager()
+  readonly endings = new EndingManager()
   readonly rng = new Rng(SEED)
 
   private panel: IssuePanel | null = null
   private toasts: ToastStack | null = null
+  private endingScreen: EndingScreen | null = null
+  private phase: GamePhase = 'running'
   /** 어제의 앱. 첫날에는 없습니다 — `0` 과 "어제 없음" 은 다른 말입니다. */
   private yesterday: ProductStatus | null = null
   private lastDay = 1
@@ -55,10 +63,12 @@ class Session {
     if (!this.hud) {
       this.panel = new IssuePanel()
       this.toasts = new ToastStack(this.icons)
+      this.endingScreen = new EndingScreen(this.icons, () => window.location.reload())
       this.hud = new HudManager(this.icons, () => this.panel?.toggle())
       this.hud.mountTo(root)
       this.toasts.mountTo(root)
       this.panel.mountTo(root)
+      this.endingScreen.mountTo(root)
     }
 
     this.showIssueToast(this.issues.spawnInitialIssue(this.rng))
@@ -76,25 +86,32 @@ class Session {
    * 시계는 매 프레임 돌지만, 계기판은 보이는 분이 바뀔 때만 다시 그립니다.
    */
   tick(delta: number): void {
+    if (this.phase !== 'running') return
     if (!this.clock.advanceSeconds(delta)) return
 
     this.settleEconomy()
     this.hud?.setClock(this.clock)
+    if (this.checkEnding()) return
     if (this.clock.day !== this.lastDay) this.rollOverDay()
   }
 
   updateClock(patch: Partial<Clock>): void {
+    if (this.phase !== 'running') return
     Object.assign(this.clock, patch)
     this.hud?.setClock(this.clock)
+    if (this.checkEnding()) return
     if (this.clock.day !== this.lastDay) this.rollOverDay()
   }
 
   updatePlayer(patch: Partial<PlayerStatus>): void {
+    if (this.phase !== 'running') return
     Object.assign(this.player, patch)
     this.hud?.setPlayer(this.player)
+    this.checkEnding()
   }
 
   updateProduct(patch: Partial<ProductStatus>): void {
+    if (this.phase !== 'running') return
     Object.assign(this.product, patch)
     this.hud?.setProduct(this.product, this.yesterday)
   }
@@ -112,6 +129,7 @@ class Session {
    * 이슈를 닫고, 새 이슈를 터뜨리고, 쓴 시간만큼 시계를 밉니다.
    */
   chooseOption(issue: Issue, option: IssueOption): void {
+    if (this.phase !== 'running') return
     // 판을 닫아야 걸어가는 것이 보입니다.
     this.panel?.hide()
     this.world.player.approach(this.world.workDesk, () => this.resolveChoice(issue, option))
@@ -119,6 +137,7 @@ class Session {
 
   /** 책상 앞에 섰습니다. 이제 판정하고 그 결과를 세상에 반영합니다. */
   private resolveChoice(issue: Issue, option: IssueOption): void {
+    if (this.phase !== 'running') return
     const outcome = issue.resolve(option, this.createResolveContext())
     if (outcome.blocked) return
 
@@ -139,9 +158,14 @@ class Session {
       console.log(`[issue] 아이디어 도난 — ${issue.title} / ${option.title}`)
     }
 
+    // 선택지 비용으로 자원이 바닥난 순간 먼저 끝냅니다. 아래 시간 정산에서
+    // 매출이 들어와 0원을 잠시 지나친 사실이 사라지면 "바닥나면 종료"가 아닙니다.
+    if (this.checkEnding()) return
+
     this.clock.advanceMinutes(outcome.minutes)
     this.settleEconomy()
     this.hud?.setClock(this.clock)
+    if (this.checkEnding()) return
     if (this.clock.day !== this.lastDay) this.rollOverDay()
     this.refreshHud()
   }
@@ -149,6 +173,35 @@ class Session {
   /** 이슈들이 판정에 쓰는 것들. */
   createResolveContext(): ResolveContext {
     return { player: this.player, day: this.clock.day, rng: this.rng }
+  }
+
+  /** 엔딩 규칙들이 읽는 상태 묶음. Session 자체를 넘기지 않아 규칙의 쓰기를 막습니다. */
+  private createEndingContext(): EndingContext {
+    return {
+      player: this.player,
+      product: this.product,
+      clock: this.clock,
+      issues: this.issues,
+    }
+  }
+
+  /** 지금 조건을 만족한 엔딩이 있으면 판을 끝냅니다. */
+  private checkEnding(): boolean {
+    if (this.phase !== 'running') return true
+
+    const ending = this.endings.evaluate(this.createEndingContext())
+    if (!ending) return false
+
+    this.finish(ending)
+    return true
+  }
+
+  private finish(ending: EndingResult): void {
+    this.phase = 'ended'
+    this.refreshHud()
+    this.panel?.hide()
+    this.canvas?.stop()
+    this.endingScreen?.show(ending)
   }
 
   /**

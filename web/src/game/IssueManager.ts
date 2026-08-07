@@ -30,6 +30,13 @@ export class IssueManager {
     return this.opened.size
   }
 
+  /** 이번 판에서 해결한 누적 건수. 같은 이슈를 여러 번 해결하면 각각 셉니다. */
+  get solvedCount(): number {
+    let total = 0
+    for (const count of this.solved.values()) total += count
+    return total
+  }
+
   /** 지금 열려 있는 이슈들. 선택지 UI 가 이걸 읽습니다. */
   get openIssues(): Issue[] {
     return ISSUES.filter((issue) => this.opened.has(issue.code))
