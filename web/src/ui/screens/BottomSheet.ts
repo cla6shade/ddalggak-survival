@@ -2,23 +2,30 @@ import { UiElement } from '../UiElement'
 import { session } from '@/core/Session'
 import type { Issue } from '@/game/issues/Issue'
 import type { IssueOption } from '@/game/issues/IssueOption'
+import type { RoomAction, RoomActionMenu } from '@/game/actions/RoomAction'
 
 const KIND_LABEL: Record<string, string> = { direct: '직접', ddalggak: '딸깍', gamble: '도박' }
 
 /**
- * 두 화면을 오가는 판 — 열린 이슈 목록, 그리고 고른 이슈의 대응책.
- * `selected` 가 `null` 이냐로 갈립니다.
+ * 화면 아래에서 떠오르는 판 하나. 세 화면을 오갑니다 —
+ * 열린 이슈 목록, 고른 이슈의 대응책, 그리고 방 물건 앞에서 할 수 있는 것들.
+ *
+ * `menu` 가 있으면 방 행동 화면, 없고 `selected` 가 있으면 대응책 화면,
+ * 둘 다 없으면 이슈 목록입니다. 판을 하나만 두는 이유는 두 장이 동시에 열리면
+ * 서로의 바깥 층이 상대의 클릭을 삼키기 때문입니다.
  *
  * 바깥 층(`scrim`)은 판 밖을 눌러 닫기 위한 것입니다.
  * 값을 스스로 만들지 않고 `session` 에서 읽어 그리기만 하며,
- * 누르면 `session.chooseOption` 으로 넘깁니다.
+ * 누르면 `session` 으로 도로 넘깁니다.
  */
-export class IssuePanel extends UiElement<'div'> {
+export class BottomSheet extends UiElement<'div'> {
   private readonly sheet = document.createElement('div')
   private readonly title = document.createElement('span')
   private readonly hint = document.createElement('span')
   private readonly back = document.createElement('button')
   private readonly rows = document.createElement('div')
+  /** 지금 펼쳐 둔 방 물건의 목록. `null` 이면 이슈 쪽 화면입니다. */
+  private menu: RoomActionMenu | null = null
   /** 지금 대응책을 펼쳐 둔 이슈. `null` 이면 목록 화면입니다. */
   private selected: Issue | null = null
   private isOpen = false
@@ -62,16 +69,23 @@ export class IssuePanel extends UiElement<'div'> {
     })
   }
 
+  /** 계기판의 알림 버튼. 이슈 화면이 떠 있으면 닫고, 아니면 이슈 목록을 폅니다. */
   toggle(): void {
-    if (this.isOpen) this.hide()
-    else this.show()
+    if (this.isOpen && this.menu === null) this.hide()
+    else this.showIssues()
   }
 
-  show(): void {
-    this.isOpen = true
+  showIssues(): void {
+    this.menu = null
     this.selected = null
-    this.toggleClass('scrim--hidden', false)
-    this.render()
+    this.open()
+  }
+
+  /** 방 물건 앞에 섰습니다. 그 물건이 내놓는 것들을 폅니다. */
+  showMenu(menu: RoomActionMenu): void {
+    this.menu = menu
+    this.selected = null
+    this.open()
   }
 
   hide(): void {
@@ -83,18 +97,35 @@ export class IssuePanel extends UiElement<'div'> {
   render(): void {
     if (!this.isOpen) return
 
+    if (this.menu) {
+      this.renderHead(this.menu.title, this.menu.hint, false)
+      this.rows.replaceChildren(...this.renderActionRows(this.menu))
+
+      return
+    }
+
     // 손대는 사이에 해결됐으면 목록으로 돌아갑니다.
     if (this.selected && !session.issues.isOpen(this.selected.code)) this.selected = null
 
-    this.back.hidden = this.selected === null
-    this.title.textContent = this.selected ? this.selected.title : '이슈'
-    this.hint.textContent = this.selected
-      ? `방치 시 ${this.selected.getNeglectText()}`
-      : `${session.issues.count}개 열려 있음`
+    if (this.selected) {
+      this.renderHead(this.selected.title, `방치 시 ${this.selected.getNeglectText()}`, true)
+      this.rows.replaceChildren(...this.renderOptionRows(this.selected))
+    } else {
+      this.renderHead('이슈', `${session.issues.count}개 열려 있음`, false)
+      this.rows.replaceChildren(...this.renderIssueRows())
+    }
+  }
 
-    this.rows.replaceChildren(
-      ...(this.selected ? this.renderOptionRows(this.selected) : this.renderIssueRows()),
-    )
+  private open(): void {
+    this.isOpen = true
+    this.toggleClass('scrim--hidden', false)
+    this.render()
+  }
+
+  private renderHead(title: string, hint: string, canGoBack: boolean): void {
+    this.back.hidden = !canGoBack
+    this.title.textContent = title
+    this.hint.textContent = hint
   }
 
   /** 목록 화면 — 열린 이슈마다 한 줄. */
@@ -148,6 +179,37 @@ export class IssuePanel extends UiElement<'div'> {
 
       return row
     })
+  }
+
+  /**
+   * 방 행동 화면 — 물건 앞에서 할 수 있는 것들.
+   * 성공률이 없는 행동이라 오른쪽 큰 숫자 자리를 비웁니다.
+   */
+  private renderActionRows(menu: RoomActionMenu): HTMLElement[] {
+    return menu.actions.map((action) => {
+      const row = document.createElement('button')
+      row.type = 'button'
+      row.className = 'panel option'
+      row.disabled = !action.isAffordable(session.player)
+
+      const body = document.createElement('div')
+      body.className = 'option__body'
+      body.append(
+        createSpan('option__label', action.title),
+        createSpan('option__note', action.getCostText()),
+      )
+
+      row.append(createSpan('kind', action.badge), body)
+      row.addEventListener('click', () => this.choose(action))
+
+      return row
+    })
+  }
+
+  /** 판을 닫아야 방에서 벌어지는 일이 보입니다. */
+  private choose(action: RoomAction): void {
+    this.hide()
+    session.performAction(action)
   }
 }
 

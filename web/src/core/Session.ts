@@ -2,22 +2,23 @@ import { GameCanvas } from './GameCanvas'
 import { AssetManager } from '@/assets/AssetManager'
 import { World } from '@/world/World'
 import { Clock } from '@/game/Clock'
-import { MAX_STAMINA, PlayerStatus } from '@/game/stats/PlayerStatus'
+import { PlayerStatus } from '@/game/stats/PlayerStatus'
 import { ProductStatus } from '@/game/stats/ProductStatus'
 import { IssueManager } from '@/game/IssueManager'
 import { advanceEconomy } from '@/game/economy'
 import { MAX_QUALITY } from '@/game/calc/quality'
-import { getSleepRecovery } from '@/game/calc/sleepRecovery'
+import { formatActionOutcome } from '@/game/actions/RoomAction'
 import { Rng } from '@/game/Rng'
 import { IconSheet } from '@/assets/IconSheet'
 import { HudManager } from '@/ui/screens/HudManager'
-import { IssuePanel } from '@/ui/screens/IssuePanel'
+import { BottomSheet } from '@/ui/screens/BottomSheet'
 import { ToastStack } from '@/ui/screens/ToastStack'
 import { EndingScreen } from '@/ui/screens/EndingScreen'
 import { EndingManager } from '@/game/endings/EndingManager'
 import type { EndingContext, EndingResult } from '@/game/endings/Ending'
 import type { Issue, ResolveContext } from '@/game/issues/Issue'
 import type { IssueOption } from '@/game/issues/IssueOption'
+import type { ActionContext, RoomAction, RoomActionMenu } from '@/game/actions/RoomAction'
 
 /** 고정 시드. 같은 값이면 같은 판이 재현됩니다. */
 const SEED = 1
@@ -44,7 +45,7 @@ class Session {
   readonly endings = new EndingManager()
   readonly rng = new Rng(SEED)
 
-  private panel: IssuePanel | null = null
+  private sheet: BottomSheet | null = null
   private toasts: ToastStack | null = null
   private endingScreen: EndingScreen | null = null
   private phase: GamePhase = 'running'
@@ -61,13 +62,13 @@ class Session {
     const root = document.querySelector('#interface')
     if (!(root instanceof HTMLElement)) throw new Error('#interface 를 찾지 못했습니다')
     if (!this.hud) {
-      this.panel = new IssuePanel()
+      this.sheet = new BottomSheet()
       this.toasts = new ToastStack(this.icons)
       this.endingScreen = new EndingScreen(this.icons, () => window.location.reload())
-      this.hud = new HudManager(this.icons, () => this.panel?.toggle())
+      this.hud = new HudManager(this.icons, () => this.sheet?.toggle())
       this.hud.mountTo(root)
       this.toasts.mountTo(root)
-      this.panel.mountTo(root)
+      this.sheet.mountTo(root)
       this.endingScreen.mountTo(root)
     }
 
@@ -119,7 +120,7 @@ class Session {
   /** 이슈처럼 스스로 상태를 들고 있는 쪽이 바뀌었을 때 부릅니다. */
   refreshHud(): void {
     this.hud?.render(this.clock, this.player, this.product, this.yesterday, this.issues)
-    this.panel?.render()
+    this.sheet?.render()
   }
 
   /**
@@ -131,7 +132,7 @@ class Session {
   chooseOption(issue: Issue, option: IssueOption): void {
     if (this.phase !== 'running') return
     // 판을 닫아야 걸어가는 것이 보입니다.
-    this.panel?.hide()
+    this.sheet?.hide()
     this.world.player.approach(this.world.workDesk, () => this.resolveChoice(issue, option))
   }
 
@@ -170,9 +171,55 @@ class Session {
     this.refreshHud()
   }
 
+  /**
+   * 물건 앞에 섰습니다. 그 물건이 내놓는 것들을 폅니다.
+   *
+   * 이미 그 앞에 서 있으므로 여기서 다시 걸어가게 하면 안 됩니다 —
+   * 도착이 `onInteract` 를 또 불러 판이 무한히 다시 열립니다.
+   */
+  openActionMenu(menu: RoomActionMenu): void {
+    if (this.phase !== 'running') return
+    this.sheet?.showMenu(menu)
+  }
+
+  /**
+   * 행동 하나를 눌렀습니다.
+   *
+   * 판정은 행동이 합니다. 여기서는 그 결과를 세상에 반영합니다 —
+   * `chooseOption` 과 같은 순서입니다.
+   */
+  performAction(action: RoomAction): void {
+    if (this.phase !== 'running') return
+
+    const outcome = action.perform(this.createActionContext())
+    // 판이 열린 사이에 잔고가 떨어졌을 수 있습니다. 잠긴 줄은 그때 다시 그려지지 않습니다.
+    if (outcome.blocked) {
+      this.toasts?.push('잔고 부족', action.title, 'bad')
+      return
+    }
+
+    this.toasts?.push(action.title, formatActionOutcome(outcome), 'good')
+
+    // 행동 값으로 자원이 바닥난 순간 먼저 끝냅니다. 아래 시간 정산에서
+    // 매출이 들어와 0원을 잠시 지나친 사실이 사라지면 "바닥나면 종료"가 아닙니다.
+    if (this.checkEnding()) return
+
+    this.clock.advanceMinutes(outcome.minutes)
+    this.settleEconomy()
+    this.hud?.setClock(this.clock)
+    if (this.checkEnding()) return
+    if (this.clock.day !== this.lastDay) this.rollOverDay()
+    this.refreshHud()
+  }
+
   /** 이슈들이 판정에 쓰는 것들. */
   createResolveContext(): ResolveContext {
     return { player: this.player, day: this.clock.day, rng: this.rng }
+  }
+
+  /** 방 행동들이 쓰는 것들. 자는 것처럼 이슈를 읽어야 하는 행동이 있습니다. */
+  createActionContext(): ActionContext {
+    return { ...this.createResolveContext(), issues: this.issues }
   }
 
   /** 엔딩 규칙들이 읽는 상태 묶음. Session 자체를 넘기지 않아 규칙의 쓰기를 막습니다. */
@@ -199,7 +246,7 @@ class Session {
   private finish(ending: EndingResult): void {
     this.phase = 'ended'
     this.refreshHud()
-    this.panel?.hide()
+    this.sheet?.hide()
     this.canvas?.stop()
     this.endingScreen?.show(ending)
   }
@@ -229,19 +276,17 @@ class Session {
     this.toasts?.push('이슈 발생', issue.title)
     this.hud?.setIssues(this.issues)
     this.hud?.pingIssues()
-    this.panel?.render()
+    this.sheet?.render()
   }
 
-  /** 날이 바뀌었습니다. 체력을 회복하고, 비교 기준이 될 어제를 떠 둡니다. */
+  /**
+   * 날이 바뀌었습니다. 비교 기준이 될 어제를 떠 둡니다.
+   *
+   * 체력은 건드리지 않습니다 — 자정이 지났다고 잔 것은 아닙니다.
+   * 회복은 침대에 눕는 `Sleep` 만 합니다.
+   */
   private rollOverDay(): void {
     this.lastDay = this.clock.day
-
-    const pressure = this.issues.applyNeglect(0, this.createResolveContext())
-    this.player.stamina = Math.min(
-      MAX_STAMINA,
-      this.player.stamina + getSleepRecovery(this.issues.count, pressure.staminaRecoveryPenalty),
-    )
-    this.hud?.setPlayer(this.player)
 
     this.yesterday = this.product.clone()
     this.hud?.setProduct(this.product, this.yesterday)
