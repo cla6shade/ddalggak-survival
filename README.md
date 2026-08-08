@@ -22,6 +22,22 @@ pnpm typecheck
 pnpm build
 ```
 
+## 시뮬레이터
+
+브라우저 없이 게임을 돌려 밸런스를 재는 도구가 `simulator/` 에 있습니다.
+게임 규칙을 베끼지 않고 `web/src` 를 그대로 불러 씁니다.
+
+```bash
+cd simulator
+pnpm install
+pnpm sim      # 한 판 돌리고 runs/ 에 기록을 남깁니다
+pnpm batch    # 여러 판 돌리고 엔딩 분포와 생존 일수를 냅니다
+pnpm test     # 결정론·정보 은닉·종료 보장·골든
+```
+
+기록은 `simulator/viewer/index.html` 을 브라우저로 열어 `runs/` 의 JSON 을 끌어다
+놓으면 한 판의 타임라인으로 펼쳐집니다. 자세한 것은 [simulator/README.md](simulator/README.md).
+
 ## 현재 구현 내용
 
 - 방 안의 사물을 클릭하면 캐릭터가 사물 앞으로 이동합니다.

@@ -21,6 +21,10 @@ asset-generator/chrome-profile/
 web/dist/
 .vite
 
+# 시뮬레이터가 뱉은 판 기록. 돌리면 다시 나오고, 판마다 수백 KB 씩 쌓입니다.
+# 회귀 기준인 simulator/test/golden.json 은 여기 해당하지 않습니다.
+simulator/runs/
+
 # Arcweave 에서 뽑은 시나리오 원본. 빌드도 런타임도 읽지 않고, 이슈 정의는
 # web/src/game/issues/ 로 이미 옮겨 적었습니다.
 scenario.json

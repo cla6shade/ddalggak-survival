@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>딸깍 서바이벌 · 판 기록</title>
+    <style>
+      /*
+       * 게임과 같은 톤입니다 — 다크에 뉴트럴을 앰버 쪽으로 틴트했습니다.
+       * 숫자가 주인공이고 라벨은 조용합니다. 글래스·네온·그라디언트는 쓰지 않습니다.
+       */
+      :root {
+        --bg: #14100c;
+        --surface: #1d1811;
+        --surface-2: #251e15;
+        --line: #33291d;
+        --text: #efe6d8;
+        --muted: #a08f78;
+        --dim: #6d6151;
+        --amber: #e0a44a;
+        --danger: #d05a4a;
+        --good: #7fa25c;
+        --info: #6f8fa8;
+
+        --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+        --sans: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 28px 20px 80px;
+      }
+
+      /* ── 머리글 ─────────────────────────────────────────────── */
+
+      .top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .top h1 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      .top p {
+        margin: 0;
+        color: var(--dim);
+        font-size: 12px;
+      }
+
+      .file {
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--muted);
+        border-radius: 3px;
+        padding: 7px 12px;
+        font: inherit;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .file:hover {
+        border-color: var(--amber);
+        color: var(--text);
+      }
+
+      /* ── 비어 있을 때 ────────────────────────────────────────── */
+
+      .drop {
+        margin-top: 40px;
+        border: 1px dashed var(--line);
+        border-radius: 4px;
+        padding: 72px 24px;
+        text-align: center;
+        color: var(--dim);
+      }
+
+      .drop strong {
+        display: block;
+        color: var(--muted);
+        font-weight: 500;
+        font-size: 15px;
+        margin-bottom: 10px;
+      }
+
+      .drop code {
+        font-family: var(--mono);
+        color: var(--amber);
+        font-size: 12px;
+      }
+
+      body.dragging .drop {
+        border-color: var(--amber);
+        color: var(--text);
+      }
+
+      .error {
+        margin-top: 20px;
+        border-left: 2px solid var(--danger);
+        background: var(--surface);
+        padding: 12px 16px;
+        color: var(--danger);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      /* ── 결과 요약 ───────────────────────────────────────────── */
+
+      .meta {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin: 22px 0 6px;
+        color: var(--dim);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+
+      .meta b {
+        color: var(--muted);
+        font-weight: 400;
+      }
+
+      .verdict {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+
+      .verdict__eyebrow {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        color: var(--danger);
+        text-transform: uppercase;
+      }
+
+      .verdict__title {
+        font-size: 26px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .verdict__days {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 13px;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 26px;
+      }
+
+      .card {
+        background: var(--surface);
+        padding: 12px 14px;
+      }
+
+      .card__label {
+        color: var(--dim);
+        font-size: 11px;
+        letter-spacing: 0.04em;
+      }
+
+      .card__value {
+        margin-top: 3px;
+        font-family: var(--mono);
+        font-size: 19px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      .card__value.is-bad {
+        color: var(--danger);
+      }
+
+      /* ── 곡선 레인 ───────────────────────────────────────────── */
+
+      .chart {
+        position: relative;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: var(--surface);
+        overflow: hidden;
+      }
+
+      .lane {
+        display: grid;
+        grid-template-columns: 132px 1fr;
+        align-items: stretch;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .lane__head {
+        padding: 8px 12px;
+        border-right: 1px solid var(--line);
+        background: var(--surface-2);
+      }
+
+      .lane__name {
+        display: block;
+        color: var(--dim);
+        font-size: 11px;
+        letter-spacing: 0.04em;
+      }
+
+      .lane__value {
+        display: block;
+        margin-top: 2px;
+        font-family: var(--mono);
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+        letter-spacing: -0.02em;
+      }
+
+      .lane__plot {
+        display: block;
+        width: 100%;
+        height: 56px;
+      }
+
+      .lane__fill {
+        fill: currentColor;
+        opacity: 0.1;
+      }
+
+      .lane__line {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.4;
+        stroke-linejoin: round;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .lane__zero {
+        stroke: var(--dim);
+        stroke-width: 1;
+        stroke-dasharray: 2 3;
+        vector-effect: non-scaling-stroke;
+        opacity: 0.6;
+      }
+
+      /* ── 사건 레일과 시간축 ───────────────────────────────────── */
+
+      .rail {
+        display: grid;
+        grid-template-columns: 132px 1fr;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .rail__head {
+        padding: 8px 12px;
+        border-right: 1px solid var(--line);
+        background: var(--surface-2);
+        color: var(--dim);
+        font-size: 11px;
+        letter-spacing: 0.04em;
+      }
+
+      .rail__plot {
+        display: block;
+        width: 100%;
+        height: 62px;
+      }
+
+      .marker {
+        cursor: pointer;
+      }
+
+      .marker:hover .marker__dot {
+        r: 4.5;
+      }
+
+      .axis {
+        display: grid;
+        grid-template-columns: 132px 1fr;
+        background: var(--surface-2);
+      }
+
+      .axis__head {
+        padding: 6px 12px;
+        border-right: 1px solid var(--line);
+        color: var(--dim);
+        font-size: 11px;
+      }
+
+      .axis__plot {
+        display: block;
+        width: 100%;
+        height: 22px;
+      }
+
+      .axis__tick {
+        stroke: var(--line);
+        stroke-width: 1;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .axis__label {
+        fill: var(--dim);
+        font-family: var(--mono);
+        font-size: 9px;
+      }
+
+      .crosshair {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--amber);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .chart:hover .crosshair {
+        opacity: 0.5;
+      }
+
+      /* ── 로그 표 ─────────────────────────────────────────────── */
+
+      .logwrap {
+        margin-top: 26px;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+      }
+
+      thead th {
+        position: sticky;
+        top: 0;
+        background: var(--surface-2);
+        color: var(--dim);
+        font-weight: 400;
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        text-align: left;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      tbody td {
+        padding: 7px 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      tbody tr.is-target {
+        background: var(--surface-2);
+      }
+
+      .t-time,
+      .t-num {
+        font-family: var(--mono);
+        color: var(--muted);
+        white-space: nowrap;
+      }
+
+      .t-num {
+        text-align: right;
+      }
+
+      .tag {
+        display: inline-block;
+        min-width: 62px;
+        padding: 1px 7px;
+        border: 1px solid currentColor;
+        border-radius: 2px;
+        font-size: 10.5px;
+        letter-spacing: 0.04em;
+        text-align: center;
+      }
+
+      .t-detail {
+        color: var(--muted);
+      }
+
+      .is-danger {
+        color: var(--danger);
+      }
+      .is-good {
+        color: var(--good);
+      }
+      .is-amber {
+        color: var(--amber);
+      }
+      .is-info {
+        color: var(--info);
+      }
+      .is-muted {
+        color: var(--dim);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div>
+          <h1>딸깍 서바이벌 · 판 기록</h1>
+          <p>시뮬레이터가 뱉은 RunLog 하나를 시간순으로 폅니다.</p>
+        </div>
+        <label class="file">
+          기록 열기
+          <input id="picker" type="file" accept="application/json,.json" hidden />
+        </label>
+      </header>
+
+      <section id="empty">
+        <div class="drop">
+          <strong>RunLog JSON 을 여기에 끌어다 놓으세요</strong>
+          <code>pnpm sim --seed 1 --policy survival</code>
+          <div style="margin-top: 6px">가 <code>runs/</code> 에 남긴 파일입니다.</div>
+        </div>
+        <div id="error" class="error" hidden></div>
+      </section>
+
+      <main id="report" hidden>
+        <div class="meta" id="meta"></div>
+        <div class="verdict" id="verdict"></div>
+        <div class="cards" id="cards"></div>
+        <div class="chart" id="chart">
+          <div id="lanes"></div>
+          <div class="rail">
+            <div class="rail__head">사건</div>
+            <svg
+              class="rail__plot"
+              id="rail"
+              viewBox="0 0 1000 62"
+              preserveAspectRatio="none"
+              aria-label="사건 표시"
+            ></svg>
+          </div>
+          <div class="axis">
+            <div class="axis__head">일차</div>
+            <svg
+              class="axis__plot"
+              id="axis"
+              viewBox="0 0 1000 22"
+              preserveAspectRatio="none"
+            ></svg>
+          </div>
+          <div class="crosshair" id="crosshair"></div>
+        </div>
+
+        <div class="logwrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 92px">시각</th>
+                <th style="width: 84px">종류</th>
+                <th>내용</th>
+                <th style="width: 100px" class="t-num">잔고</th>
+                <th style="width: 64px" class="t-num">체력</th>
+              </tr>
+            </thead>
+            <tbody id="log"></tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      'use strict'
+
+      const MINUTES_PER_DAY = 1440
+      const PLOT_WIDTH = 1000
+
+      /** 레인 하나의 정의. 순서가 곧 화면 순서입니다. */
+      const LANES = [
+        { key: 'money', name: '잔고', color: 'var(--amber)', format: formatMoney, zero: true },
+        { key: 'stamina', name: '체력', color: 'var(--danger)', format: formatInt, zero: true },
+        { key: 'users', name: '이용자', color: 'var(--good)', format: formatInt, zero: false },
+        { key: 'quality', name: '품질', color: 'var(--info)', format: formatInt, zero: false },
+        { key: 'credit', name: '크레딧', color: 'var(--muted)', format: formatInt, zero: true },
+        { key: 'openIssues', name: '열린 이슈', color: 'var(--danger)', format: formatInt, zero: false },
+      ]
+
+      /** 사건 종류마다 어떻게 보일지. 모르는 종류는 회색 기본값으로 떨어집니다. */
+      const EVENT_STYLES = {
+        'issue-spawned': { label: '이슈', tone: 'is-danger', rail: true, row: 0 },
+        choice: { label: '대응', tone: 'is-amber', rail: true, row: 1 },
+        action: { label: '행동', tone: 'is-info', rail: true, row: 2 },
+        wait: { label: '기다림', tone: 'is-muted', rail: false, row: 2 },
+        'day-rolled': { label: '날 바뀜', tone: 'is-muted', rail: false, row: 3 },
+        ending: { label: '엔딩', tone: 'is-danger', rail: true, row: 3 },
+      }
+
+      const DEFAULT_STYLE = { label: '기타', tone: 'is-muted', rail: true, row: 2 }
+
+      const dom = {
+        picker: document.getElementById('picker'),
+        empty: document.getElementById('empty'),
+        error: document.getElementById('error'),
+        report: document.getElementById('report'),
+        meta: document.getElementById('meta'),
+        verdict: document.getElementById('verdict'),
+        cards: document.getElementById('cards'),
+        chart: document.getElementById('chart'),
+        lanes: document.getElementById('lanes'),
+        rail: document.getElementById('rail'),
+        axis: document.getElementById('axis'),
+        crosshair: document.getElementById('crosshair'),
+        log: document.getElementById('log'),
+      }
+
+      let current = null
+
+      /* ── 불러오기 ─────────────────────────────────────────────── */
+
+      dom.picker.addEventListener('change', (event) => {
+        const file = event.target.files && event.target.files[0]
+        if (file) readFile(file)
+      })
+
+      document.addEventListener('dragover', (event) => {
+        event.preventDefault()
+        document.body.classList.add('dragging')
+      })
+
+      document.addEventListener('dragleave', (event) => {
+        if (event.relatedTarget === null) document.body.classList.remove('dragging')
+      })
+
+      document.addEventListener('drop', (event) => {
+        event.preventDefault()
+        document.body.classList.remove('dragging')
+        const file = event.dataTransfer && event.dataTransfer.files[0]
+        if (file) readFile(file)
+      })
+
+      function readFile(file) {
+        const reader = new FileReader()
+        reader.onload = () => {
+          try {
+            load(JSON.parse(String(reader.result)))
+          } catch (cause) {
+            fail(`읽지 못했습니다: ${cause.message}`)
+          }
+        }
+        reader.onerror = () => fail('파일을 열지 못했습니다.')
+        reader.readAsText(file)
+      }
+
+      function fail(message) {
+        dom.error.textContent = message
+        dom.error.hidden = false
+        dom.empty.hidden = false
+        dom.report.hidden = true
+      }
+
+      function load(log) {
+        if (!log || !log.samples || !Array.isArray(log.events)) {
+          return fail('RunLog 모양이 아닙니다. samples 와 events 가 있어야 합니다.')
+        }
+
+        current = log
+        dom.error.hidden = true
+        dom.empty.hidden = true
+        dom.report.hidden = false
+
+        renderMeta(log)
+        renderVerdict(log)
+        renderCards(log)
+        renderLanes(log)
+        renderRail(log)
+        renderAxis(log)
+        renderLog(log)
+      }
+
+      /* ── 요약 ─────────────────────────────────────────────────── */
+
+      function renderMeta(log) {
+        const { meta } = log
+        const params = Object.entries(meta.policy.params || {})
+          .map(([key, value]) => `${key}=${value}`)
+          .join(' ')
+
+        dom.meta.innerHTML = [
+          `시드 <b>${meta.seed}</b>`,
+          `정책 <b>${escape(meta.policy.name)}</b>${params ? ` <b>${escape(params)}</b>` : ''}`,
+          `틱 <b>${meta.config.tickMinutes}분</b>`,
+          `설정 <b>${escape(meta.configHash)}</b>`,
+          `결정 <b>${(log.stats.steps || 0).toLocaleString('ko-KR')}회</b>`,
+        ]
+          .map((part) => `<span>${part}</span>`)
+          .join('')
+      }
+
+      function renderVerdict(log) {
+        const { outcome } = log
+        const eyebrow =
+          outcome.eyebrow || (outcome.reason === 'survived' ? '기록 종료' : '중단됨')
+        const title =
+          outcome.title ||
+          (outcome.reason === 'survived' ? '끝까지 버텼습니다' : '시뮬레이터가 멈췄습니다')
+
+        dom.verdict.innerHTML = `
+          <span class="verdict__eyebrow">${escape(eyebrow)}</span>
+          <span class="verdict__title">${escape(title)}</span>
+          <span class="verdict__days">${outcome.snapshot.day}일차 · ${formatClock(
+            outcome.endedAtMinutes,
+          )}</span>
+        `
+      }
+
+      function renderCards(log) {
+        const s = log.outcome.snapshot
+        const stats = log.stats
+        const cards = [
+          { label: '잔고', value: formatMoney(s.money), bad: s.money <= 0 },
+          { label: '체력', value: formatInt(s.stamina), bad: s.stamina <= 0 },
+          { label: '크레딧', value: formatInt(s.credit), bad: false },
+          { label: '이용자', value: formatInt(s.users), bad: false },
+          { label: '품질', value: formatInt(s.quality), bad: false },
+          { label: '누적 매출', value: formatMoney(s.revenue), bad: false },
+          { label: '누적 지출', value: formatMoney(s.spend), bad: false },
+          { label: '해결한 이슈', value: `${s.solvedIssues} / ${stats.issuesSpawned}`, bad: false },
+        ]
+
+        dom.cards.innerHTML = cards
+          .map(
+            (card) => `
+              <div class="card">
+                <div class="card__label">${escape(card.label)}</div>
+                <div class="card__value${card.bad ? ' is-bad' : ''}">${escape(card.value)}</div>
+              </div>`,
+          )
+          .join('')
+      }
+
+      /* ── 곡선 ─────────────────────────────────────────────────── */
+
+      function renderLanes(log) {
+        const span = totalMinutes(log)
+
+        dom.lanes.innerHTML = LANES.map((lane) => {
+          const series = log.samples[lane.key]
+          if (!Array.isArray(series) || series.length === 0) return ''
+
+          return `
+            <div class="lane" style="color: ${lane.color}">
+              <div class="lane__head">
+                <span class="lane__name">${escape(lane.name)}</span>
+                <span class="lane__value" data-value="${escape(lane.key)}">${escape(
+                  lane.format(series[series.length - 1]),
+                )}</span>
+              </div>
+              ${plot(log.samples.t, series, span, lane.zero)}
+            </div>`
+        }).join('')
+      }
+
+      /**
+       * 레인 하나의 그림. 값마다 자기 축을 씁니다 — 돈과 체력을 한 축에 겹치면
+       * 체력 곡선이 바닥에 눌려 아무것도 안 보입니다.
+       */
+      function plot(times, values, span, showZero) {
+        const height = 56
+        const pad = 6
+        let min = Math.min(...values)
+        let max = Math.max(...values)
+        if (showZero) min = Math.min(min, 0)
+        if (max === min) max = min + 1
+
+        const x = (t) => (span === 0 ? 0 : (t / span) * PLOT_WIDTH)
+        const y = (v) => height - pad - ((v - min) / (max - min)) * (height - pad * 2)
+
+        let line = ''
+        for (let i = 0; i < values.length; i += 1) {
+          line += `${i === 0 ? 'M' : 'L'}${x(times[i]).toFixed(2)} ${y(values[i]).toFixed(2)}`
+        }
+
+        const area = `${line}L${x(times[times.length - 1]).toFixed(2)} ${height}L${x(
+          times[0],
+        ).toFixed(2)} ${height}Z`
+
+        const zero =
+          showZero && min < 0
+            ? `<line class="lane__zero" x1="0" y1="${y(0).toFixed(2)}" x2="${PLOT_WIDTH}" y2="${y(
+                0,
+              ).toFixed(2)}" />`
+            : ''
+
+        return `
+          <svg class="lane__plot" viewBox="0 0 ${PLOT_WIDTH} ${height}" preserveAspectRatio="none">
+            <path class="lane__fill" d="${area}" />
+            ${zero}
+            <path class="lane__line" d="${line}" />
+          </svg>`
+      }
+
+      /* ── 사건 레일 ────────────────────────────────────────────── */
+
+      function renderRail(log) {
+        const span = totalMinutes(log)
+        const rows = [12, 25, 38, 51]
+
+        dom.rail.innerHTML = log.events
+          .map((event, index) => {
+            const style = EVENT_STYLES[event.type] || DEFAULT_STYLE
+            if (!style.rail) return ''
+
+            const cx = span === 0 ? 0 : (event.t / span) * PLOT_WIDTH
+            const cy = rows[style.row] || 25
+            const color = toneColor(style.tone, event)
+
+            return `
+              <g class="marker" data-index="${index}">
+                <title>${escape(`${formatClock(event.t)} · ${describe(event)}`)}</title>
+                <circle class="marker__dot" cx="${cx.toFixed(2)}" cy="${cy}" r="3"
+                        fill="${color}" />
+              </g>`
+          })
+          .join('')
+
+        dom.rail.querySelectorAll('.marker').forEach((marker) => {
+          marker.addEventListener('click', () => focusRow(Number(marker.dataset.index)))
+        })
+      }
+
+      function toneColor(tone, event) {
+        if (event && event.type === 'choice') {
+          if (event.blocked) return 'var(--dim)'
+
+          return event.solved ? 'var(--good)' : 'var(--amber)'
+        }
+
+        const map = {
+          'is-danger': 'var(--danger)',
+          'is-good': 'var(--good)',
+          'is-amber': 'var(--amber)',
+          'is-info': 'var(--info)',
+          'is-muted': 'var(--dim)',
+        }
+
+        return map[tone] || 'var(--dim)'
+      }
+
+      /* ── 시간축 ───────────────────────────────────────────────── */
+
+      function renderAxis(log) {
+        const span = totalMinutes(log)
+        const days = Math.max(1, Math.ceil(span / MINUTES_PER_DAY))
+        // 날이 많으면 눈금이 뭉개집니다. 25개 안쪽으로 솎습니다.
+        const step = Math.max(1, Math.ceil(days / 25))
+
+        let marks = ''
+        for (let day = 0; day <= days; day += step) {
+          const x = span === 0 ? 0 : ((day * MINUTES_PER_DAY) / span) * PLOT_WIDTH
+          if (x > PLOT_WIDTH) break
+          marks += `<line class="axis__tick" x1="${x.toFixed(2)}" y1="0" x2="${x.toFixed(
+            2,
+          )}" y2="6" />`
+          marks += `<text class="axis__label" x="${Math.min(x + 3, PLOT_WIDTH - 12).toFixed(
+            2,
+          )}" y="16">${day + 1}</text>`
+        }
+
+        dom.axis.innerHTML = marks
+      }
+
+      /* ── 로그 표 ──────────────────────────────────────────────── */
+
+      function renderLog(log) {
+        dom.log.innerHTML = log.events
+          .map((event, index) => {
+            const style = EVENT_STYLES[event.type] || DEFAULT_STYLE
+            const at = sampleIndexAt(log, event.t)
+
+            return `
+              <tr id="row-${index}">
+                <td class="t-time">${escape(formatClock(event.t))}</td>
+                <td><span class="tag ${style.tone}">${escape(style.label)}</span></td>
+                <td>${describeHtml(event)}</td>
+                <td class="t-num">${escape(formatMoney(log.samples.money[at]))}</td>
+                <td class="t-num">${escape(formatInt(log.samples.stamina[at]))}</td>
+              </tr>`
+          })
+          .join('')
+      }
+
+      function describe(event) {
+        switch (event.type) {
+          case 'issue-spawned':
+            return `${event.title} — 방치 시 ${event.neglectText}`
+          case 'choice':
+            return `${event.issueTitle} · ${event.optionTitle}`
+          case 'action':
+            return event.title
+          case 'wait':
+            return `${formatDuration(event.minutes)} 기다림`
+          case 'day-rolled':
+            return `${event.day}일차 시작`
+          case 'ending':
+            return `${event.title} — ${event.description}`
+          default:
+            return event.type
+        }
+      }
+
+      function describeHtml(event) {
+        if (event.type === 'choice') {
+          const verdict = event.blocked
+            ? '<span class="is-muted">잠김</span>'
+            : event.solved
+              ? `<span class="is-good">해결 · 품질 +${event.qualityGain}</span>`
+              : '<span class="is-amber">실패</span>'
+
+          return `${escape(event.issueTitle)} <span class="t-detail">· ${escape(
+            event.optionTitle,
+          )} (${Math.round(event.successRate * 100)}%)</span> ${verdict}`
+        }
+
+        if (event.type === 'action') {
+          const bits = []
+          if (event.staminaGain !== 0) bits.push(`체력 ${signed(event.staminaGain)}`)
+          if (event.moneyGain !== 0) bits.push(`${signed(Math.round(event.moneyGain))}원`)
+          bits.push(formatDuration(event.minutes))
+
+          return `${escape(event.title)} <span class="t-detail">· ${escape(
+            bits.join(' · '),
+          )}</span>${event.blocked ? ' <span class="is-muted">잔고 부족</span>' : ''}`
+        }
+
+        if (event.type === 'issue-spawned') {
+          return `${escape(event.title)} <span class="t-detail">· 방치 시 ${escape(
+            event.neglectText,
+          )}</span>`
+        }
+
+        if (event.type === 'ending') {
+          return `<strong>${escape(event.title)}</strong> <span class="t-detail">${escape(
+            event.description,
+          )}</span>`
+        }
+
+        return `<span class="t-detail">${escape(describe(event))}</span>`
+      }
+
+      function focusRow(index) {
+        const row = document.getElementById(`row-${index}`)
+        if (!row) return
+
+        document.querySelectorAll('tr.is-target').forEach((el) => el.classList.remove('is-target'))
+        row.classList.add('is-target')
+        row.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }
+
+      /* ── 크로스헤어 ───────────────────────────────────────────── */
+
+      dom.chart.addEventListener('mousemove', (event) => {
+        if (!current) return
+
+        const box = dom.chart.getBoundingClientRect()
+        const offset = event.clientX - box.left
+        const plotLeft = 132
+        if (offset < plotLeft) return
+
+        const ratio = (offset - plotLeft) / (box.width - plotLeft)
+        const t = ratio * totalMinutes(current)
+        const at = sampleIndexAt(current, t)
+
+        dom.crosshair.style.left = `${offset}px`
+        for (const lane of LANES) {
+          const target = dom.lanes.querySelector(`[data-value="${lane.key}"]`)
+          const series = current.samples[lane.key]
+          if (target && series) target.textContent = lane.format(series[at])
+        }
+      })
+
+      dom.chart.addEventListener('mouseleave', () => {
+        if (!current) return
+
+        for (const lane of LANES) {
+          const target = dom.lanes.querySelector(`[data-value="${lane.key}"]`)
+          const series = current.samples[lane.key]
+          if (target && series) target.textContent = lane.format(series[series.length - 1])
+        }
+      })
+
+      /* ── 도우미 ───────────────────────────────────────────────── */
+
+      function totalMinutes(log) {
+        const times = log.samples.t
+
+        return Math.max(1, times[times.length - 1] || 0)
+      }
+
+      /** `t` 에 가장 가까운 표본 자리. 표본이 수천 개라 이분 탐색으로 찾습니다. */
+      function sampleIndexAt(log, t) {
+        const times = log.samples.t
+        let low = 0
+        let high = times.length - 1
+
+        while (low < high) {
+          const mid = (low + high) >> 1
+          if (times[mid] < t) low = mid + 1
+          else high = mid
+        }
+
+        if (low > 0 && Math.abs(times[low - 1] - t) <= Math.abs(times[low] - t)) return low - 1
+
+        return low
+      }
+
+      function formatClock(totalMinutes) {
+        const day = Math.floor(totalMinutes / MINUTES_PER_DAY) + 1
+        const within = Math.floor(totalMinutes % MINUTES_PER_DAY)
+        const hour = String(Math.floor(within / 60)).padStart(2, '0')
+        const minute = String(within % 60).padStart(2, '0')
+
+        return `${day}일 ${hour}:${minute}`
+      }
+
+      function formatDuration(minutes) {
+        if (minutes < 60) return `${Math.round(minutes)}분`
+
+        return `${Math.round((minutes / 60) * 10) / 10}시간`
+      }
+
+      function formatMoney(value) {
+        if (typeof value !== 'number') return '—'
+
+        return Math.round(value).toLocaleString('ko-KR')
+      }
+
+      function formatInt(value) {
+        if (typeof value !== 'number') return '—'
+
+        return String(Math.round(value))
+      }
+
+      function signed(value) {
+        return `${value > 0 ? '+' : '−'}${Math.abs(value).toLocaleString('ko-KR')}`
+      }
+
+      function escape(value) {
+        return String(value).replace(
+          /[&<>"']/g,
+          (char) =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char],
+        )
+      }
+    </script>
+  </body>
+</html>
