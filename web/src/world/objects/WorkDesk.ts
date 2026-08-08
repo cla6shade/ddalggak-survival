@@ -1,4 +1,5 @@
 import { WorldObject } from '../base/WorldObject'
+import { session } from '@/core/Session'
 
 export class WorkDesk extends WorldObject {
   constructor() {
@@ -13,5 +14,9 @@ export class WorkDesk extends WorldObject {
       { x: 0, y: 0 },
       64,
     )
+  }
+
+  override onInteract(): void {
+    session.openIssueList()
   }
 }

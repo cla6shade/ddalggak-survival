@@ -1,5 +1,4 @@
 import { WorldObject } from '../base/WorldObject'
-import { BED_MENU } from '@/game/actions/RoomActionCatalog'
 import { session } from '@/core/Session'
 
 export class Bed extends WorldObject {
@@ -18,6 +17,6 @@ export class Bed extends WorldObject {
   }
 
   override onInteract(): void {
-    session.openActionMenu(BED_MENU)
+    session.openActionMenu(session.menus.bed)
   }
 }

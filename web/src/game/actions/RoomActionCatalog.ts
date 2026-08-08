@@ -3,6 +3,7 @@ import { PartTimeJob } from './rooms/PartTimeJob'
 import { Sleep } from './rooms/Sleep'
 import { StepOutside } from './rooms/StepOutside'
 import type { RoomActionMenu } from './RoomAction'
+import type { Session } from '@/core/Session'
 
 /*
  * 방 물건마다 내놓는 것들. 수치는 전부 각 행동 클래스의 생성자에 있습니다.
@@ -17,21 +18,31 @@ import type { RoomActionMenu } from './RoomAction'
  * 이 마개가 풀립니다 — 그때는 「하루 한 번」 같은 구조적 제한이 필요합니다.
  */
 
-export const DOOR_MENU: RoomActionMenu = {
-  title: '문',
-  hint: '나가서 무엇을 하시겠습니까',
-  actions: [new PartTimeJob(), new StepOutside()],
-}
+/**
+ * 방 물건들이 펼치는 목록 한 벌. 행동이 세션을 생성자로 받으므로 모듈 상수가 될 수
+ * 없어, 세션이 자기 것으로 하나 들고 물건들이 그걸 가리킵니다.
+ */
+export class RoomActionMenus {
+  readonly door: RoomActionMenu
+  readonly refrigerator: RoomActionMenu
+  /** 힌트에 기상 시각을 넣지 않는 이유: 시트가 열린 채로 시간이 흘러 낡습니다. */
+  readonly bed: RoomActionMenu
 
-export const REFRIGERATOR_MENU: RoomActionMenu = {
-  title: '냉장고',
-  hint: '남은 것: 계란 두 개, 라면',
-  actions: [new HomeMeal()],
-}
-
-/** 힌트에 기상 시각을 넣지 않는 이유: 시트가 열린 채로 시간이 흘러 낡습니다. */
-export const BED_MENU: RoomActionMenu = {
-  title: '침대',
-  hint: '8시간 뒤에 일어납니다',
-  actions: [new Sleep()],
+  constructor(session: Session) {
+    this.door = {
+      title: '문',
+      hint: '나가서 무엇을 하시겠습니까',
+      actions: [new PartTimeJob(session), new StepOutside(session)],
+    }
+    this.refrigerator = {
+      title: '냉장고',
+      hint: '남은 것: 계란 두 개, 라면',
+      actions: [new HomeMeal(session)],
+    }
+    this.bed = {
+      title: '침대',
+      hint: '8시간 뒤에 일어납니다',
+      actions: [new Sleep(session)],
+    }
+  }
 }

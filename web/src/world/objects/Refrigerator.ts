@@ -1,5 +1,4 @@
 import { WorldObject } from '../base/WorldObject'
-import { REFRIGERATOR_MENU } from '@/game/actions/RoomActionCatalog'
 import { session } from '@/core/Session'
 
 export class Refrigerator extends WorldObject {
@@ -8,6 +7,6 @@ export class Refrigerator extends WorldObject {
   }
 
   override onInteract(): void {
-    session.openActionMenu(REFRIGERATOR_MENU)
+    session.openActionMenu(session.menus.refrigerator)
   }
 }

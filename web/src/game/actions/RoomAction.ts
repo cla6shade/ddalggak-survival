@@ -1,12 +1,5 @@
 import { MAX_STAMINA } from '../stats/PlayerStatus'
-import type { PlayerStatus } from '../stats/PlayerStatus'
-import type { IssueManager } from '../IssueManager'
-import type { ResolveContext } from '../issues/Issue'
-
-/** 행동이 세상을 만지기 위해 필요한 것들. 이슈를 읽어야 하는 행동이 있어 목록을 함께 넘깁니다. */
-export interface ActionContext extends ResolveContext {
-  issues: IssueManager
-}
+import type { Session } from '@/core/Session'
 
 /** 행동 하나를 실행한 결과. 이걸 받은 쪽이 시계를 밀고 계기판을 다시 그립니다. */
 export interface ActionOutcome {
@@ -36,6 +29,7 @@ export interface RoomActionMenu {
  */
 export class RoomAction {
   constructor(
+    protected readonly session: Session,
     readonly id: string,
     /** 줄 왼쪽 배지에 들어갈 두 글자. 외출 / 식사 / 취침. */
     readonly badge: string,
@@ -49,14 +43,20 @@ export class RoomAction {
   ) {}
 
   /** 이번에 회복할 체력. 자는 것처럼 상황을 보는 행동이 여기를 덮어씁니다. */
-  getStaminaGain(_context: ActionContext): number {
+  getStaminaGain(): number {
     return this.staminaGain
   }
 
-  /** 줄에 적을 한 줄. 숫자를 약속할 수 없는 행동이 여기를 덮어씁니다. */
+  /**
+   * 줄에 적을 한 줄. 숫자를 약속할 수 없는 행동이 여기를 덮어씁니다.
+   *
+   * 체력은 `staminaGain` 이 아니라 `getStaminaGain()` 을 봅니다 — 자는 것처럼
+   * 회복량을 그때그때 계산하는 행동도 적힌 값과 실제 값이 같아야 합니다.
+   */
   getCostText(): string {
+    const staminaGain = this.getStaminaGain()
     const parts = [formatHours(this.minutes)]
-    if (this.staminaGain !== 0) parts.push(`체력 ${formatSigned(this.staminaGain)}`)
+    if (staminaGain !== 0) parts.push(`체력 ${formatSigned(staminaGain)}`)
     if (this.moneyGain !== 0) parts.push(`${formatSignedMoney(this.moneyGain)}원`)
 
     return parts.join(' · ')
@@ -66,8 +66,8 @@ export class RoomAction {
    * 지금 이 행동을 할 수 있는지.
    * 체력은 보지 않습니다 — 음수로 내려가도 막지 않습니다(`Issue.isAffordable` 과 같은 규칙).
    */
-  isAffordable(player: PlayerStatus): boolean {
-    return player.money + this.moneyGain >= 0
+  isAffordable(): boolean {
+    return this.session.player.money + this.moneyGain >= 0
   }
 
   /**
@@ -76,15 +76,15 @@ export class RoomAction {
    * `player` 만 제자리에서 고칩니다 — 시계를 밀고 계기판을 다시 그리는 것은
    * `ActionOutcome` 을 받은 쪽이 합니다.
    */
-  perform(context: ActionContext): ActionOutcome {
-    const { player } = context
-    if (!this.isAffordable(player)) {
+  perform(): ActionOutcome {
+    const { player } = this.session
+    if (!this.isAffordable()) {
       return { blocked: true, minutes: 0, staminaGain: 0, moneyGain: 0 }
     }
 
     // 상한에 걸려 잘린 몫은 안 오른 것이므로, 실제로 오른 만큼만 결과에 싣습니다.
     const before = player.stamina
-    player.stamina = Math.min(MAX_STAMINA, before + this.getStaminaGain(context))
+    player.stamina = Math.min(MAX_STAMINA, before + this.getStaminaGain())
     player.money += this.moneyGain
 
     return {

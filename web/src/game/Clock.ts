@@ -1,5 +1,8 @@
+/** 한 시간의 길이(분). 방치 사고처럼 시간 단위로 재는 확률이 이 단위를 씁니다. */
+export const MINUTES_PER_HOUR = 60
+
 /** 하루의 길이(분). 날을 넘겨 재는 값은 전부 이 단위를 씁니다. */
-export const MINUTES_PER_DAY = 24 * 60
+export const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR
 
 /** 현실 1초에 게임 몇 분이 흐르는지. */
 const MINUTES_PER_SECOND = 1

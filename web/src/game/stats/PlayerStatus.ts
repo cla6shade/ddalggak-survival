@@ -6,7 +6,7 @@ export const MAX_STAMINA = 100
  * 셋 다 음수로 내려갈 수 있고, 아무 곳에서도 막지 않습니다.
  */
 export class PlayerStatus {
-  money = 300_000
+  money = 150_000
   stamina = MAX_STAMINA
   credit = 30
 }

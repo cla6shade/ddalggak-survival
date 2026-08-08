@@ -109,9 +109,11 @@ export class WorldObject extends Collidable implements Drawable {
    * 앞에 서서 상호작용했을 때 할 일. 물건마다 여기를 채웁니다. 기본은 아무것도 안 함.
    *
    * 두 가지를 조심하십시오.
-   * `Character.onArrive` 가 `arrivalTask` 보다 **먼저** 이걸 부릅니다 — `WorkDesk` 에
-   * 채우면 `Session.chooseOption` 이 이슈를 해결할 때마다 함께 발화합니다.
-   * 그리고 길이 막혀 못 가면 `approach` 가 들려 보낸 일만 하고 이건 건너뜁니다.
+   * `Character.onArrive` 가 `arrivalTask` 보다 **먼저** 이걸 부릅니다 — 그래서
+   * `Session.chooseOption` 으로 책상까지 걸어가면, 판정에 앞서 `WorkDesk` 의
+   * 이슈 목록이 먼저 열립니다.
+   * 그리고 길이 막혀 못 가면 `approach` 가 들려 보낸 일만 하고 이건 건너뜁니다 —
+   * 이미 그 앞에 서 있을 때가 여기에 해당합니다.
    */
   onInteract(): void {}
 }

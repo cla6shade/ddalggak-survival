@@ -10,27 +10,26 @@ import { RoughVisuals } from './product/RoughVisuals'
 import { SlowResponse } from './development/SlowResponse'
 import { TinyText } from './product/TinyText'
 import type { Issue } from './Issue'
+import type { Session } from '@/core/Session'
 
-/** 이 게임에 있는 이슈 전부. 순서는 이슈 코드순입니다. */
-export const ISSUES: readonly Issue[] = [
-  new LocalhostDeploy(),
-  new SlowResponse(),
-  new AppCrash(),
-  new PaymentIntegration(),
-  new ExposedDatabase(),
-  new NoUsers(),
-  new NoSeo(),
-  new PhoneFlood(),
-  new NoResponsive(),
-  new TinyText(),
-  new RoughVisuals(),
-]
-
-/** 1일차에 하나 터지는 후보. */
-export const INITIAL_ISSUES: readonly Issue[] = ISSUES.filter((issue) => issue.initial)
-
-const BY_CODE = new Map(ISSUES.map((issue) => [issue.code, issue]))
-
-export function findIssueByCode(code: string): Issue | undefined {
-  return BY_CODE.get(code)
+/**
+ * 이 게임에 있는 이슈 전부. 순서는 이슈 코드순입니다.
+ *
+ * 모듈 상수가 아니라 함수인 이유는 이슈가 세션을 생성자로 받기 때문입니다 —
+ * 세션보다 먼저 만들어질 수 없습니다.
+ */
+export function createIssues(session: Session): Issue[] {
+  return [
+    new LocalhostDeploy(session),
+    new SlowResponse(session),
+    new AppCrash(session),
+    new PaymentIntegration(session),
+    new ExposedDatabase(session),
+    new NoUsers(session),
+    new NoSeo(session),
+    new PhoneFlood(session),
+    new NoResponsive(session),
+    new TinyText(session),
+    new RoughVisuals(session),
+  ]
 }
