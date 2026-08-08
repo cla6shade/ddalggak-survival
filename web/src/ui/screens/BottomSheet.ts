@@ -1,10 +1,18 @@
 import { UiElement } from '../UiElement'
+import { HudIcon } from '../primitives/HudIcon'
 import { session } from '@/core/Session'
+import type { AtlasFrame } from '@/generated/atlas'
 import type { Issue } from '@/game/issues/Issue'
 import type { IssueOption } from '@/game/issues/IssueOption'
 import type { RoomAction, RoomActionMenu } from '@/game/actions/RoomAction'
 
 const KIND_LABEL: Record<string, string> = { direct: '직접', ddalggak: '딸깍', gamble: '도박' }
+
+/** 줄 아래쪽에 아이콘과 함께 서는 값 하나. */
+interface CostChip {
+  frame: AtlasFrame
+  text: string
+}
 
 /**
  * 화면 아래에서 떠오르는 판 하나. 세 화면을 오갑니다 —
@@ -20,8 +28,9 @@ const KIND_LABEL: Record<string, string> = { direct: '직접', ddalggak: '딸깍
  */
 export class BottomSheet extends UiElement<'div'> {
   private readonly sheet = document.createElement('div')
+  private readonly head = document.createElement('div')
+  private readonly heading = document.createElement('div')
   private readonly title = document.createElement('span')
-  private readonly hint = document.createElement('span')
   private readonly back = document.createElement('button')
   private readonly rows = document.createElement('div')
   /** 지금 펼쳐 둔 방 물건의 목록. `null` 이면 이슈 쪽 화면입니다. */
@@ -36,31 +45,34 @@ export class BottomSheet extends UiElement<'div'> {
     this.element.setAttribute('aria-modal', 'true')
 
     this.sheet.className = 'sheet'
+    this.head.className = 'panel sheet__head'
 
-    const head = document.createElement('div')
-    head.className = 'panel sheet__head'
-
-    this.title.className = 'sheet__title'
-    this.hint.className = 'sheet__hint'
-
+    // 좌·우 버튼이 늘 자리를 차지해야 가운데 제목이 화면 한가운데에 섭니다.
+    // 돌아갈 곳이 없을 때는 지우지 않고 감춥니다.
     this.back.type = 'button'
-    this.back.className = 'sheet__close'
-    this.back.textContent = '← 목록'
+    this.back.className = 'sheet__nav'
+    this.back.textContent = '←'
+    this.back.setAttribute('aria-label', '이슈 목록으로')
     this.back.addEventListener('click', () => {
       this.selected = null
       this.render()
     })
 
+    this.heading.className = 'sheet__heading'
+    this.title.className = 'sheet__title'
+    this.heading.append(this.title)
+
     const close = document.createElement('button')
     close.type = 'button'
-    close.className = 'sheet__close'
-    close.textContent = '닫기'
+    close.className = 'sheet__nav'
+    close.textContent = '✕'
+    close.setAttribute('aria-label', '닫기')
     close.addEventListener('click', () => this.hide())
 
-    head.append(this.title, this.hint, this.back, close)
+    this.head.append(this.back, this.heading, close)
 
     this.rows.className = 'sheet__rows'
-    this.sheet.append(head, this.rows)
+    this.sheet.append(this.head, this.rows)
     this.element.append(this.sheet)
 
     // 판 바깥을 누르면 닫습니다. 안쪽 클릭은 여기까지 올라오지 않아야 합니다.
@@ -98,7 +110,7 @@ export class BottomSheet extends UiElement<'div'> {
     if (!this.isOpen) return
 
     if (this.menu) {
-      this.renderHead(this.menu.title, this.menu.hint, false)
+      this.renderHead(this.menu.title, false)
       this.rows.replaceChildren(...this.renderActionRows(this.menu))
 
       return
@@ -108,10 +120,10 @@ export class BottomSheet extends UiElement<'div'> {
     if (this.selected && !session.issues.isOpen(this.selected.code)) this.selected = null
 
     if (this.selected) {
-      this.renderHead(this.selected.title, `방치 시 ${this.selected.getNeglectText()}`, true)
+      this.renderHead(this.selected.title, true)
       this.rows.replaceChildren(...this.renderOptionRows(this.selected))
     } else {
-      this.renderHead('이슈', `${session.issues.count}개 열려 있음`, false)
+      this.renderHead(`이슈 ${session.issues.count}건`, false)
       this.rows.replaceChildren(...this.renderIssueRows())
     }
   }
@@ -122,13 +134,19 @@ export class BottomSheet extends UiElement<'div'> {
     this.render()
   }
 
-  private renderHead(title: string, hint: string, canGoBack: boolean): void {
+  /**
+   * 머리글은 목업대로 좌(목록) · 중앙(경고 아이콘 + 이름) · 우(닫기) 3열입니다.
+   * 경고 아이콘은 이슈를 펼쳤을 때만 답니다 — 방 행동에는 경고할 것이 없습니다.
+   */
+  private renderHead(title: string, canGoBack: boolean): void {
     this.back.hidden = !canGoBack
     this.title.textContent = title
-    this.hint.textContent = hint
+
+    const alert = canGoBack ? new HudIcon(session.icons, 'hud_issue', 'icon icon--sm').element : null
+    this.heading.replaceChildren(...(alert ? [alert, this.title] : [this.title]))
   }
 
-  /** 목록 화면 — 열린 이슈마다 한 줄. */
+  /** 목록 화면 — 열린 이슈마다 한 줄. 방치 페널티는 여기서 읽습니다. */
   private renderIssueRows(): HTMLElement[] {
     return session.issues.openIssues.map((issue) => {
       const row = document.createElement('button')
@@ -147,34 +165,21 @@ export class BottomSheet extends UiElement<'div'> {
     })
   }
 
-  /** 대응책 화면 — 선택지마다 종류·성공률·소모 자원. */
+  /** 대응책 화면 — 제목·소모 자원·성공률·종류. */
   private renderOptionRows(issue: Issue): HTMLElement[] {
-    const day = session.clock.day
-
     return issue.options.map((option) => {
-      const chance = issue.getSuccessRate(option, day)
-      const row = document.createElement('button')
-      row.type = 'button'
-      row.className = 'panel option'
-      // 자원이 모자라면 잠급니다.
-      row.disabled = !issue.isAffordable(option, session.player)
-
-      const body = document.createElement('div')
-      body.className = 'option__body'
-      body.append(
-        createSpan('option__label', option.title),
-        createSpan('option__note', formatCost(option)),
+      const chance = issue.getSuccessRate(option)
+      const row = this.createOptionRow(
+        option.title,
+        createChipRow(getCostChips(option)),
+        // 자원이 모자라면 잠급니다.
+        !issue.isAffordable(option),
       )
 
-      const odds = document.createElement('div')
-      odds.className = `odds odds--${getGrade(chance)}`
-      odds.append(
-        createSpan('odds__value', `${Math.round(chance * 100)}%`),
-        createSpan('odds__caption', '성공'),
-      )
-
+      const odds = createSpan(`odds__value odds--${getGrade(chance)}`, `${Math.round(chance * 100)}%`)
       const kind = createSpan(`kind kind--${option.kind}`, KIND_LABEL[option.kind] ?? option.kind)
-      row.append(kind, body, odds)
+
+      row.append(odds, kind)
       row.addEventListener('click', () => session.chooseOption(issue, option))
 
       return row
@@ -187,23 +192,31 @@ export class BottomSheet extends UiElement<'div'> {
    */
   private renderActionRows(menu: RoomActionMenu): HTMLElement[] {
     return menu.actions.map((action) => {
-      const row = document.createElement('button')
-      row.type = 'button'
-      row.className = 'panel option'
-      row.disabled = !action.isAffordable(session.player)
-
-      const body = document.createElement('div')
-      body.className = 'option__body'
-      body.append(
-        createSpan('option__label', action.title),
+      const row = this.createOptionRow(
+        action.title,
         createSpan('option__note', action.getCostText()),
+        !action.isAffordable(),
       )
 
-      row.append(createSpan('kind', action.badge), body)
+      row.append(createSpan('odds__value', ''), createSpan('kind', action.badge))
       row.addEventListener('click', () => this.choose(action))
 
       return row
     })
+  }
+
+/**
+   * 줄 하나의 왼쪽 절반. 오른쪽(성공률·배지)은 부르는 쪽이 붙입니다.
+   * 어디에 놓일지는 CSS 의 `grid-template-areas` 가 정하므로 붙이는 순서는 상관없습니다.
+   */
+  private createOptionRow(title: string, note: HTMLElement, locked: boolean): HTMLButtonElement {
+    const row = document.createElement('button')
+    row.type = 'button'
+    row.className = 'panel option'
+    row.disabled = locked
+    row.append(createSpan('option__label', title), note)
+
+    return row
   }
 
   /** 판을 닫아야 방에서 벌어지는 일이 보입니다. */
@@ -221,20 +234,49 @@ function createSpan(className: string, text: string): HTMLSpanElement {
   return element
 }
 
+function createChipRow(chips: readonly CostChip[]): HTMLElement {
+  const row = document.createElement('span')
+  row.className = 'option__chips'
+
+  for (const chip of chips) {
+    const item = document.createElement('span')
+    item.className = 'chip'
+    item.append(
+      new HudIcon(session.icons, chip.frame, 'icon icon--sm').element,
+      createSpan('chip__text', chip.text),
+    )
+    row.append(item)
+  }
+
+  return row
+}
+
+/**
+ * 선택지 하나가 무엇을 얼마나 쓰는지. 0 인 자원은 줄이 길어지기만 해서 뺍니다.
+ *
+ * **엔딩으로 이어지는 확률(`theftChance`)은 절대 넣지 않습니다.**
+ * 무엇을 걸고 누르는지는 눌러 봐야 압니다.
+ */
+function getCostChips(option: IssueOption): CostChip[] {
+  const chips: CostChip[] = []
+  if (option.staminaCost > 0) {
+    chips.push({ frame: 'resource_stamina', text: `-${option.staminaCost}` })
+  }
+  if (option.moneyCost > 0) {
+    chips.push({ frame: 'resource_money', text: `-${option.moneyCost.toLocaleString('ko-KR')}원` })
+  }
+  if (option.creditCost > 0) {
+    chips.push({ frame: 'resource_credit', text: `-${option.creditCost}` })
+  }
+  chips.push({ frame: 'resource_time', text: `${Math.round((option.minutes / 60) * 10) / 10}시간` })
+
+  return chips
+}
+
 /** 성공률을 CSS 수식 클래스용 등급으로. */
 function getGrade(chance: number): 'poor' | 'fair' | 'good' {
   if (chance < 0.35) return 'poor'
   if (chance < 0.6) return 'fair'
 
   return 'good'
-}
-
-function formatCost(option: IssueOption): string {
-  const parts: string[] = []
-  if (option.staminaCost > 0) parts.push(`체력 ${option.staminaCost}`)
-  if (option.moneyCost > 0) parts.push(`${option.moneyCost.toLocaleString('ko-KR')}원`)
-  if (option.creditCost > 0) parts.push(`크레딧 ${option.creditCost}`)
-  parts.push(`${Math.round((option.minutes / 60) * 10) / 10}시간`)
-
-  return parts.join(' · ')
 }

@@ -24,6 +24,9 @@
   --accent: #ff30c6;
   --accent-ink: oklch(0.18 0.045 344);
   --up: #5cd582;
+  /* 성공률의 초록. 계기판 초록(`--up`)보다 한 뼘 짙습니다 — 선택지 목업(`Frame 21.svg`)
+     과 계기판 목업(`메인.svg`)이 서로 다른 초록을 쓰고, 둘 다 자기 화면에서 맞습니다. */
+  --odds-good: #22c67f;
   --down: #fe5852;
   --credit: #2abdec;
   --stamina: #5cd582;
@@ -544,9 +547,11 @@ img.icon {
   outline-offset: 3px;
 }
 
-/* 넓은 화면에서 계기판이 양끝까지 늘어지면 눈이 멀리 갑니다. */
+/* 넓은 화면에서 계기판이 양끝까지 늘어지면 눈이 멀리 갑니다.
+   알림 줄도 같은 자에 묶습니다 — 한쪽만 묶으면 넓은 화면에서 너비가 어긋납니다. */
 @media (min-width: 40rem) {
-  .hud {
+  .hud,
+  .toasts {
     width: min(100%, 34rem);
     margin: 0 auto;
   }
@@ -588,7 +593,7 @@ img.icon {
   width: min(100%, 30rem);
   max-height: 62dvh;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   margin: 0 auto;
   overflow-y: auto;
   scrollbar-width: none;
@@ -629,47 +634,52 @@ img.icon {
   }
 }
 
+/* 머리글은 목업대로 좌(목록) · 중앙(이름) · 우(닫기) 3열입니다.
+   좌우 버튼이 같은 폭으로 늘 자리를 지켜야 가운데 이름이 판 한가운데에 섭니다 —
+   돌아갈 곳이 없을 때도 지우지 않고 감추는 이유입니다. */
 .sheet__head {
+  display: grid;
+  min-height: 32px;
+  align-items: center;
+  padding: 0 var(--space-xs);
+  border-radius: var(--radius-sm);
+  grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+}
+
+.sheet__heading {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-xs);
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .sheet__title {
-  flex: none;
-  font-size: var(--text-xs);
-  font-weight: 900;
-  letter-spacing: 0.16em;
-}
-
-.sheet__hint {
-  min-width: 0;
-  flex: 1;
   overflow: hidden;
-  color: var(--text-faint);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sheet__close {
-  flex: none;
-  padding: 5px 10px;
+.sheet__nav {
   border: none;
-  border-radius: var(--radius-sm);
-  background: var(--surface-raised);
-  color: var(--text-dim);
+  background: none;
+  color: var(--text);
   font: inherit;
-  font-size: var(--text-xs);
+  font-size: var(--text-md);
+  line-height: 1;
   cursor: pointer;
 }
 
-.sheet__close:hover {
-  color: var(--text);
+.sheet__nav:last-child {
+  justify-self: end;
 }
 
-.sheet__close[hidden] {
-  display: none;
+/* 자리는 지키고 그림만 감춥니다. `display: none` 이면 가운데 칸이 밀립니다. */
+.sheet__nav[hidden] {
+  display: block;
+  visibility: hidden;
 }
 
 .sheet__rows {
@@ -680,9 +690,6 @@ img.icon {
    "여기서도 누르면 된다" 를 두 번 배우지 않습니다. */
 .issue,
 .option {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
   color: inherit;
   font: inherit;
   text-align: left;
@@ -690,10 +697,38 @@ img.icon {
   transition: background 120ms var(--ease);
 }
 
+/* 목업의 카드 하나. 왼쪽 위부터 시계 방향으로 이름 · 성공률 · 종류 · 소모 자원입니다.
+
+   칸을 이름으로 못 박습니다 — 격자는 행 우선으로 채우므로 자동 배치에 맡기면
+   붙이는 순서가 곧 배치가 되고, 방 행동처럼 성공률이 빈 줄에서 칸이 밀립니다.
+   `align-content: space-between` 이 두 줄을 위아래 끝으로 밀어 카드 높이를 채웁니다. */
+.option {
+  display: grid;
+  min-height: 86px;
+  align-content: space-between;
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  column-gap: var(--space-sm);
+  grid-template-areas:
+    'label odds'
+    'chips kind';
+  grid-template-columns: minmax(0, 1fr) auto;
+  row-gap: var(--space-xs);
+}
+
 .issue {
+  display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* 목업의 카드는 불투명합니다. 방이 비쳐 보이면 글자와 아이콘이 무늬에 묻힙니다. */
+.sheet__head,
+.issue,
+.option {
+  background: var(--surface);
 }
 
 .issue:hover,
@@ -725,159 +760,181 @@ img.icon {
   word-break: keep-all;
 }
 
-.option__body {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-}
-
 .option__label {
-  font-size: var(--text-sm);
+  grid-area: label;
+  font-size: var(--text-base);
   font-weight: 700;
+  line-height: 1.35;
   word-break: keep-all;
 }
 
+/* 소모 자원. 이름은 아이콘이 대신하고 숫자만 답니다 — 목업의 아래 줄입니다. */
+.option__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  grid-area: chips;
+  gap: var(--space-md);
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip__text {
+  color: var(--text-dim);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 방 행동은 숫자 종류가 제각각이라 아이콘으로 못 나누고 한 줄로 답니다. */
 .option__note {
-  color: var(--text-faint);
-  font-size: var(--text-xs);
+  grid-area: chips;
+  color: var(--text-dim);
+  font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
   word-break: keep-all;
 }
 
-/* 종류 배지. 딸깍은 브랜드 색, 도박은 경고 색 — 5% 짜리가 눈에 먼저 걸려야 합니다. */
+/* 종류 배지. 목업대로 채운 알약입니다 — 딸깍이 브랜드 색을 가져가고,
+   도박은 경고 색으로 갈라섭니다. 5% 짜리가 눈에 먼저 걸려야 합니다. */
 .kind {
-  flex: none;
-  width: 34px;
-  padding: 1px 0;
-  border: 1px solid var(--line-strong);
+  align-self: end;
+  justify-self: end;
+  grid-area: kind;
+  padding: 2px 8px;
   border-radius: 4px;
+  background: var(--surface-raised);
   color: var(--text-dim);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-weight: 700;
   text-align: center;
 }
 
 .kind--ddalggak {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--accent);
+  color: var(--text);
 }
 
 .kind--gamble {
-  border-color: var(--down);
-  color: var(--down);
+  background: var(--down);
+  color: var(--text);
 }
 
 /* 성공률. 이 화면에서 제일 큰 숫자라 색까지 등급을 나눕니다. */
-.odds {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
-}
-
 .odds__value {
+  align-self: start;
+  justify-self: end;
+  grid-area: odds;
   font-family: var(--font-display);
   font-size: var(--text-lg);
   font-weight: 900;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: 1.2;
 }
 
-.odds__caption {
-  color: var(--text-faint);
-  font-size: var(--text-2xs);
-  letter-spacing: 0.1em;
-}
-
-.odds--poor .odds__value {
+.odds--poor {
   color: var(--down);
 }
-.odds--fair .odds__value {
+.odds--fair {
   color: var(--accent);
 }
-.odds--good .odds__value {
-  color: var(--up);
+.odds--good {
+  color: var(--odds-good);
 }
 
 /* ─── 알림 줄 ─────────────────────────────────────────────────────────────── */
 /* 이슈는 시간이 흐르는 동안 조용히 터집니다. 계기판 숫자만 1 올라가서는 무엇이
-   터졌는지 알 수 없어서, 그 순간 화면 한가운데에 그림과 이름을 함께 세웁니다.
+   터졌는지 알 수 없어서, 그 순간 이름을 화면 맨 위에 세웁니다.
    읽는 것이지 누르는 것이 아니라 입력은 통과시킵니다. */
 
+/* 계기판 바로 아래에 섭니다. `#interface` 의 아래 칸(`1fr`)에 붙여 놓고 위로 붙이면
+   계기판 높이가 자원 줄에 따라 바뀌어도 알림이 알아서 따라 내려옵니다 —
+   위에서부터 잰 값으로 밀어 두면 그때마다 어긋납니다. */
 .toasts {
-  position: absolute;
   z-index: 15;
-  inset: 0;
   display: flex;
+  /* 자동 배치는 이슈 버튼 다음 줄로 보냅니다. 아래 칸을 이슈 버튼과 함께 씁니다. */
+  grid-row: 2;
+  align-self: start;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  /* 아래쪽 여백만 크게 줘서 한가운데보다 위로 올려 세웁니다. */
-  padding: var(--space-md) var(--space-md) calc(var(--space-md) + 28dvh);
+  /* 한 장이 줄 전체를 차지합니다. `.toast` 가 너비를 따로 잡지 않고 여기에 맡깁니다. */
+  align-items: stretch;
+  gap: var(--space-2xs);
+  /* 옆 여백은 계기판과 같은 값이라 타일과 세로선이 맞습니다. */
+  padding: var(--space-xs) var(--hud-inset) 0;
 }
 
 /* `#interface > *` 가 입력을 켜 두므로 아이디만큼 무겁게 눌러야 꺼집니다.
-   한가운데에 뜨는 만큼 뒤의 방을 확실히 통과시켜야 합니다. */
+   계기판을 덮는 만큼 뒤를 확실히 통과시켜야 합니다. */
 #interface > .toasts {
   pointer-events: none;
 }
 
-/* 그림 → 무슨 일 → 무엇에. 위에서 아래로 한 축에 세워 가운데로 모읍니다.
-   선을 두르지 않습니다. 판은 배경만으로 떨어져 나오고, 눈에 먼저 걸리는 건
-   그림입니다. 톤은 배경을 옅게 물들이고 제목에만 진하게 남습니다. */
+/* 무슨 일 → 무엇에. 한 줄로 눕혀 알약 하나로 만듭니다. 판은 어느 톤이든 검정이고,
+   성패는 글자가 아니라 **테두리와 글자색**이 먼저 알립니다 — 초록이면 됐고
+   빨강이면 안 됐습니다. */
 .toast {
-  --tone: var(--line-strong);
+  --tone: var(--ink-deep);
+  --tone-ink: var(--text);
 
   display: flex;
-  max-width: min(100%, 19rem);
-  flex-direction: column;
-  align-items: center;
-  padding: var(--space-lg) var(--space-lg) var(--space-md);
+  flex-wrap: wrap;
+  align-items: baseline;
+  /* `min-height` 로 남는 자리를 글이 위로 몰리지 않게 가운데로 모읍니다 —
+     `align-items` 는 줄 안쪽 정렬이라 이 몫은 `align-content` 가 맡습니다. */
+  align-content: center;
+  justify-content: center;
+  /* 너비는 `.toasts` 의 `align-items: stretch` 가 줍니다 — 여기서 상한을 두면
+     줄 전체를 못 씁니다. 한 줄짜리 글도 판에 눌리지 않을 만큼 키를 잡아 둡니다. */
+  min-height: 3rem;
+  padding: var(--space-sm) var(--space-md);
   border: none;
-  border-radius: var(--radius-lg);
-  background: color-mix(in oklab, var(--tone) 10%, var(--ink-deep));
-  box-shadow: 0 20px 48px -20px oklch(0.04 0.01 344 / 0.9);
-  gap: var(--space-xs);
+  border-radius: var(--radius);
+  background: var(--tone);
+  gap: 0 var(--space-2xs);
   text-align: center;
-  animation: toast-in 300ms var(--ease) backwards;
-}
-
-/* 그림이 판보다 한 박자 늦게, 조금 더 크게 들어옵니다. 시선이 여기서 시작해야 합니다. */
-.toast__icon {
-  width: 44px;
-  height: 44px;
-  animation: toast-icon-in 420ms var(--ease) 70ms backwards;
+  animation: toast-in 220ms var(--ease) backwards;
 }
 
 .toast__title {
-  color: var(--tone);
+  color: var(--tone-ink);
   font-family: var(--font-display);
-  font-size: var(--text-lg);
+  font-size: var(--text-sm);
   font-weight: 900;
   letter-spacing: -0.01em;
-  line-height: 1.15;
+  line-height: 1.4;
 }
 
 .toast__body {
-  color: var(--text-dim);
-  font-size: var(--text-sm);
+  color: var(--tone-ink);
+  font-size: var(--text-xs);
   font-weight: 500;
   line-height: 1.5;
+  opacity: 0.8;
   word-break: keep-all;
 }
 
+/* 이슈가 터진 것은 나쁜 소식입니다. 빨강으로 먼저 알립니다. */
 .toast--issue {
-  --tone: var(--down);
+  --tone: var(--ink-deep);
+  --tone-ink: var(--down);
+
+  border: 2px solid var(--down);
 }
 .toast--good {
-  --tone: var(--up);
+  --tone: var(--ink-deep);
+  --tone-ink: var(--up);
+
+  border: 2px solid var(--up);
 }
 .toast--bad {
-  --tone: var(--accent);
+  --tone: var(--ink-deep);
+  --tone-ink: var(--down);
+
+  border: 2px solid var(--down);
 }
 
 .toast--out {
@@ -886,14 +943,7 @@ img.icon {
 
 @keyframes toast-in {
   from {
-    transform: translateY(12px) scale(0.94);
-    opacity: 0;
-  }
-}
-
-@keyframes toast-icon-in {
-  from {
-    transform: scale(0.6);
+    transform: translateY(-10px) scale(0.96);
     opacity: 0;
   }
 }
@@ -901,6 +951,65 @@ img.icon {
 @keyframes toast-out {
   to {
     transform: translateY(-8px) scale(0.98);
+    opacity: 0;
+  }
+}
+
+/* ─── 끝 ─────────────────────────────────────────────────────────────────── */
+/* 결과를 펴기 전에 잠깐 서는 화면. 방은 그대로 두고 그 위를 덮습니다 — 마지막
+   화면이 비쳐 보여야 무엇이 끝났는지 압니다. 자리는 목업(`끝.svg`, 360×800)의
+   비율 그대로입니다. */
+
+.curtain {
+  position: absolute;
+  z-index: 60;
+  inset: 0;
+  /* 목업의 #1A1420 / 0.9 입니다. `--ink-deepest` 가 같은 색입니다. */
+  background: color-mix(in srgb, var(--ink-deepest) 90%, transparent);
+  animation: curtain-in 480ms var(--ease) backwards;
+  cursor: pointer;
+}
+
+.curtain--hidden {
+  display: none;
+}
+
+/* 판이 끝나면 계기판·이슈 버튼·알림 줄을 걷습니다. 목업에도 없습니다 — 더 볼 숫자가
+   없고, 0.9 로 덮어도 글자가 비쳐 읽히면 화면이 끝난 것처럼 보이지 않습니다. */
+#interface.interface--ended .hud,
+#interface.interface--ended .fab,
+#interface.interface--ended .toasts {
+  display: none;
+}
+
+/* 목업의 204/800 자리. 한 줄뿐이라 가운데로 모읍니다.
+   크기는 목업의 글자 상자(135×44)에 맞춘 값입니다. */
+.curtain__title {
+  position: absolute;
+  top: 25.5%;
+  left: 0;
+  width: 100%;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-align: center;
+}
+
+/* 목업의 376/800 자리. 크기는 캔버스가 인라인으로 잡습니다 — 픽셀이 뭉개지지
+   않게 정수 배율만 쓰므로 CSS 로 늘리지 않습니다. */
+.curtain__character {
+  position: absolute;
+  top: 47%;
+  left: 50%;
+  transform: translateX(-50%);
+  image-rendering: pixelated;
+}
+
+@keyframes curtain-in {
+  from {
     opacity: 0;
   }
 }
@@ -973,12 +1082,15 @@ img.icon {
   letter-spacing: 0.18em;
 }
 
+/* 한글은 기본값이면 단어 한복판에서 끊깁니다 — 「검색 결과에서 사라졌」/「습니다」.
+   `keep-all` 로 낱말을 지키고 띄어쓰기에서만 넘깁니다. */
 .ending__title {
   font-family: var(--font-display);
   font-size: clamp(var(--text-xl), 8vw, var(--text-2xl));
   font-weight: 900;
   letter-spacing: -0.035em;
   line-height: 1.1;
+  word-break: keep-all;
 }
 
 .ending__description {
