@@ -6,12 +6,12 @@ export class Bed extends WorldObject {
   constructor() {
     super(
       'bed',
-      152,
+      138,
       152,
       56,
       64,
-      { x: 152, y: 156, facing: 'back' },
-      { left: 124, right: 180, top: 106, bottom: 152 },
+      { x: 138, y: 156, facing: 'back' },
+      { left: 110, right: 166, top: 106, bottom: 152 },
       { x: 0, y: 0 },
       64,
     )

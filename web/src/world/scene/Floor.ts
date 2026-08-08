@@ -11,7 +11,7 @@ import type { TileTexture } from '@/generated/atlas'
  * 그리는 범위는 화면 끝까지 빈 자리가 없도록 밖으로 넉넉히 흘려보냅니다.
  */
 export class Floor implements Drawable {
-  tile: TileTexture = 'wood_tile'
+  tile: TileTexture = 'plank_tile'
 
   left = FLOOR_RECT.left
   right = FLOOR_RECT.right
