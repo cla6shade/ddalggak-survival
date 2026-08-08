@@ -11,6 +11,7 @@ import { formatActionOutcome } from '@/game/actions/RoomAction'
 import { Rng } from '@/game/Rng'
 import { IconSheet } from '@/assets/IconSheet'
 import { HudManager } from '@/ui/screens/HudManager'
+import { IssueButton } from '@/ui/screens/IssueButton'
 import { BottomSheet } from '@/ui/screens/BottomSheet'
 import { ToastStack } from '@/ui/screens/ToastStack'
 import { EndingScreen } from '@/ui/screens/EndingScreen'
@@ -46,6 +47,7 @@ class Session {
   readonly endings = new EndingManager()
   readonly rng = new Rng(SEED)
 
+  private issueButton: IssueButton | null = null
   private sheet: BottomSheet | null = null
   private toasts: ToastStack | null = null
   private endingScreen: EndingScreen | null = null
@@ -66,8 +68,10 @@ class Session {
       this.sheet = new BottomSheet()
       this.toasts = new ToastStack(this.icons)
       this.endingScreen = new EndingScreen(this.icons, () => window.location.reload())
-      this.hud = new HudManager(this.icons, () => this.sheet?.toggle())
+      this.hud = new HudManager(this.icons)
+      this.issueButton = new IssueButton(this.icons, () => this.sheet?.toggle())
       this.hud.mountTo(root)
+      this.issueButton.mountTo(root)
       this.toasts.mountTo(root)
       this.sheet.mountTo(root)
       this.endingScreen.mountTo(root)
@@ -120,7 +124,8 @@ class Session {
 
   /** 이슈처럼 스스로 상태를 들고 있는 쪽이 바뀌었을 때 부릅니다. */
   refreshHud(): void {
-    this.hud?.render(this.clock, this.player, this.product, this.yesterday, this.issues)
+    this.hud?.render(this.clock, this.player, this.product, this.yesterday)
+    this.issueButton?.setIssues(this.issues)
     this.sheet?.render()
   }
 
@@ -282,11 +287,11 @@ class Session {
     if (rollsLawsuit(minutes, this.rng)) this.triggerEnding('lawsuit')
   }
 
-  /** 터진 이슈 하나를 화면에 알립니다 — 토스트, 알림 개수, 열려 있는 판. */
+  /** 터진 이슈 하나를 화면에 알립니다 — 토스트, 이슈 버튼, 열려 있는 판. */
   private showIssueToast(issue: Issue): void {
     this.toasts?.push('이슈 발생', issue.title)
-    this.hud?.setIssues(this.issues)
-    this.hud?.pingIssues()
+    this.issueButton?.setIssues(this.issues)
+    this.issueButton?.ping()
     this.sheet?.render()
   }
 

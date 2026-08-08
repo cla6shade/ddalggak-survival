@@ -5,25 +5,30 @@
    브라우저의 텍스트 렌더링을 쓰는 편이 낫습니다. */
 
 :root {
-  /* 메인 컬러는 #F849C1. 뉴트럴도 같은 색조(약 344°)로 아주 옅게 틴트해서
-     브랜드 색과 표면이 한 집안처럼 보이게 합니다. */
-  --ink: oklch(0.16 0.014 344);
-  --ink-deep: oklch(0.115 0.012 344);
-  --surface: oklch(0.215 0.016 344);
-  --surface-raised: oklch(0.265 0.018 344);
-  --line: oklch(0.32 0.018 344);
-  --line-strong: oklch(0.44 0.022 344);
+  /* 색은 디자인 목업(`메인.svg`)에서 그대로 옮겨 왔습니다. 목업에 없는 표면·선은
+     같은 색조(약 344°)로 틴트한 뉴트럴로 이어 붙여, 목업이 다루지 않은 화면도
+     한 집안으로 보이게 합니다. */
+  --ink: #1d1619;
+  --ink-deep: #14101a;
+  /* 방 위에 까는 비네트. 스프라이트 테두리 색(#1a1420)과 같은 색입니다. */
+  --ink-deepest: #1a1420;
+  --surface: #1d1619;
+  --surface-raised: #2a2226;
+  --line: #3a2f34;
+  --line-strong: #574a51;
 
-  --text: oklch(0.95 0.012 344);
-  --text-dim: oklch(0.73 0.022 344);
-  --text-faint: oklch(0.57 0.02 344);
+  --text: #ffffff;
+  --text-dim: #b7a1ad;
+  --text-faint: #8a7681;
 
-  --accent: #f849c1;
+  --accent: #ff30c6;
   --accent-ink: oklch(0.18 0.045 344);
-  --up: oklch(0.77 0.14 152);
-  --down: oklch(0.67 0.17 27);
-  --credit: oklch(0.75 0.11 232);
-  --stamina: oklch(0.79 0.13 148);
+  --up: #5cd582;
+  --down: #fe5852;
+  --credit: #2abdec;
+  --stamina: #5cd582;
+  /* 이슈 버튼 안쪽. 빨간 테두리를 받쳐 주는 짙은 적갈색입니다. */
+  --alert-surface: #401c1d;
 
   /* 4pt 스케일. 8pt 는 너무 성겨서 12가 늘 아쉽습니다. */
   --space-2xs: 4px;
@@ -38,13 +43,21 @@
   --text-xs: 0.6875rem;
   --text-sm: 0.8125rem;
   --text-base: 1rem;
-  --text-lg: 1.375rem;
+  --text-md: 0.9375rem;
+  --text-lg: 1.25rem;
   --text-xl: 2rem;
   --text-2xl: 2.75rem;
 
-  --radius-sm: 6px;
-  --radius: 10px;
+  --radius-sm: 8px;
+  --radius: 12px;
   --radius-lg: 16px;
+
+  /* 계기판이 화면 가장자리에서 떨어지는 거리. 목업의 24/360 입니다. */
+  --hud-inset: 1.5rem;
+  /* 이슈 버튼 한 덩어리(동그라미 + 간격 + 이름표). 시트가 이만큼 위로 비켜섭니다. */
+  --fab-size: 3.9375rem;
+  --fab-block: calc(var(--fab-size) + 1.5rem);
+  --fab-gap: calc(var(--space-lg) + env(safe-area-inset-bottom));
 
   --font-body: 'Gothic A1', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --font-display: 'Hahmlet', 'Apple SD Gothic Neo', 'Malgun Gothic', serif;
@@ -76,7 +89,7 @@ body {
 
 body {
   /* 방 바깥까지 벽이 흘러가지만, 그려지기 전 한 프레임을 벽 색으로 덮어 둡니다. */
-  background: #726c73;
+  background: #b1a797;
   color: var(--text);
   /* 어두운 배경의 밝은 글자는 더 가벼워 보입니다. 행간을 조금 더 줍니다. */
   line-height: 1.6;
@@ -104,10 +117,32 @@ body {
   touch-action: manipulation;
 }
 
+/* 방과 UI 사이에 까는 그늘. 위아래 끝만 어둡게 눌러서 계기판의 작은 글자와 하단
+   버튼이 벽·바닥 무늬 위에서도 뜹니다. 가운데는 건드리지 않습니다 — 방이 주인공입니다. */
+#vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--ink-deepest) 40%, transparent),
+      transparent 15%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 88%,
+      color-mix(in srgb, var(--ink-deepest) 50%, transparent)
+    );
+  pointer-events: none;
+}
+
 #interface {
   position: absolute;
   inset: 0;
   display: grid;
+  /* 칸을 명시하지 않으면 암시적 열이 내용 폭까지 부풀어 계기판이 화면 밖으로 나갑니다.
+     여기서 화면 폭을 못 박아야 안쪽 그리드의 fr 비가 뜻대로 나눠집니다. */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   pointer-events: none;
 }
@@ -134,12 +169,12 @@ img.icon {
 }
 
 .icon--sm {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 .icon--md {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
 }
 .icon--lg {
   width: 34px;
@@ -155,8 +190,9 @@ img.icon {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: var(--space-2xs);
-  padding: calc(var(--space-xs) + env(safe-area-inset-top)) var(--space-sm) var(--space-xs);
+  gap: var(--space-xs);
+  padding: max(2.25rem, calc(var(--space-xs) + env(safe-area-inset-top))) var(--hud-inset)
+    var(--space-xs);
   background: transparent;
 }
 
@@ -168,35 +204,46 @@ img.icon {
   gap: var(--space-2xs);
 }
 
+/* 날짜 알약은 내용만큼만 넓습니다. 늘리면 빈 어둠이 벽을 덮습니다. */
 .hud__row--head {
   align-items: flex-start;
 }
 
-/* 자원 셋은 남는 폭을 나눠 갖되, 내용보다 좁아지지는 않습니다. 자금이 일곱 자리가
-   되면 단위가 밀려 잘리기 때문입니다. 좁은 화면에서는 줄을 바꿔 내려갑니다.
-   높이는 게이지가 달린 체력이 정합니다 — 셋이 나란해야 눈이 한 번에 훑습니다. */
+.hud__row--head > .tile--clock {
+  flex: 0 0 auto;
+}
+
+/* 자원 셋의 폭은 내용이 아니라 무게가 정합니다 — 잔고가 넓고 체력·크레딧이 같은
+   폭으로 뒤따릅니다. 화면이 넓어져도 이 비율은 그대로라, 어느 폭에서 봐도 눈이
+   같은 자리에서 잔고를 찾습니다. 높이는 게이지가 달린 체력이 정합니다. */
 .hud__row--resources {
+  display: grid;
+  /* minmax(0, …) 가 없으면 칸이 내용보다 좁아지지 못해 계기판 전체가 화면 밖으로
+     밀려납니다 — 그리드 아이템의 기본 최소 폭이 min-content 입니다. */
+  grid-template-columns: minmax(0, 42fr) minmax(0, 17fr) minmax(0, 17fr);
   align-items: stretch;
 }
 
-.hud__row--resources > .resource {
-  flex: 1 1 auto;
-}
-
+/* 지표 넷은 두 행이 아니라 한 덩어리입니다. 행 사이가 다른 블록보다 촘촘해서,
+   따로 두면 간격을 두 번 손봐야 합니다. */
 .hud__row--metrics {
-  gap: var(--space-2xs) var(--space-xs);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2px var(--space-2xs);
 }
 
-/* HUD 덩어리 하나 — 아이콘, 이름, 값이 한 줄.
-   테두리는 없습니다. 배경만으로 덩어리가 나뉘고, 선이 없어야 벽이 덜 시끄럽습니다.
-   대신 배경을 충분히 덮습니다 — 벽 무늬가 비치면 작은 글자가 묻힙니다. */
+/* HUD 덩어리 하나. 테두리는 없습니다 — 배경만으로 덩어리가 나뉘고, 선이 없어야 벽이
+   덜 시끄럽습니다. 배경은 불투명입니다. 벽 무늬가 비치면 작은 글자가 묻힙니다. */
 .tile {
   display: flex;
-  align-items: baseline;
-  gap: 5px;
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: color-mix(in oklab, var(--ink) 92%, transparent);
+  /* 본문 행간(1.6)을 그대로 두면 글자 상자가 글자보다 훨씬 커서, 가운데로 맞춘
+     아이콘이 글자보다 아래로 내려앉습니다. 한 줄짜리 덩어리라 행간이 필요 없습니다. */
+  align-items: center;
+  gap: var(--space-2xs);
+  line-height: 1;
+  padding: 4px var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
   white-space: nowrap;
 }
 
@@ -205,25 +252,33 @@ img.icon {
 }
 
 .tile--clock {
+  gap: var(--space-xs);
+  padding: var(--space-xs) 10px;
+  border-radius: var(--radius);
+}
+
+/* 날짜와 시각은 크기가 달라서 각자 가운데를 맞추면 밑선이 어긋납니다.
+   한 덩어리 안에 넣어 밑선을 공유시키고, 덩어리째 아이콘과 가운데를 맞춥니다. */
+.clock__text {
+  display: flex;
   align-items: baseline;
-  padding: 6px 10px;
+  gap: 6px;
+  /* 상자의 가운데와 글자의 가운데는 다릅니다 — 폰트의 어센트가 한글 윗선보다 높아서,
+     상자로 맞추면 글자만 2px 떠 보입니다. 눈으로 맞춘 만큼 내려 줍니다. */
+  transform: translateY(2px);
 }
 
 .hud__day {
-  font-family: var(--font-display);
-  font-size: var(--text-base);
-  font-weight: 900;
+  font-size: var(--text-md);
+  font-weight: 800;
   letter-spacing: -0.01em;
 }
 
 .hud__clock {
   color: var(--text-dim);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-.hud__spacer {
-  flex: 1;
 }
 
 .tile__label {
@@ -233,8 +288,8 @@ img.icon {
 }
 
 .tile__value {
-  font-size: var(--text-sm);
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -246,7 +301,7 @@ img.icon {
 
 .tile__delta {
   color: var(--text-faint);
-  font-size: var(--text-2xs);
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 
@@ -257,19 +312,29 @@ img.icon {
   color: var(--down);
 }
 
-/* 자원 — 값이 주인공입니다. 이름은 그 위에 작게 얹힙니다. */
+/* 자원 — 값이 주인공이라 한가운데 크게 놓고, 아이콘과 이름은 그 위에 한 줄로 얹습니다.
+   셋을 가운데 정렬로 맞춰야 폭이 제각각인 카드가 한 덩어리로 읽힙니다. */
 .resource {
   align-items: center;
-  padding: 6px 10px;
-  gap: var(--space-xs);
+  justify-content: center;
+  padding: 10px 6px;
+  border-radius: var(--radius);
 }
 
 .resource__body {
-  display: flex;
+  display: grid;
+  width: 100%;
   min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 1px;
+  justify-items: center;
+  gap: 2px;
+}
+
+.resource__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  /* 줄 높이를 빼서 아이콘 크기가 곧 이 줄의 높이가 되게 합니다. */
+  line-height: 1;
 }
 
 .resource__amount {
@@ -278,11 +343,15 @@ img.icon {
   gap: 3px;
 }
 
+/* 카드 안에서 이름은 값을 소개하는 말이라 흐리지 않습니다. 흐린 이름은 지표 쪽 몫입니다. */
+.resource .tile__label {
+  color: var(--text);
+}
+
 .resource .tile__value {
-  font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-weight: 900;
-  line-height: 1.1;
+  font-weight: 800;
+  line-height: 1.15;
 }
 
 .resource--money .tile__value {
@@ -299,14 +368,22 @@ img.icon {
   color: var(--down);
 }
 
-/* 지표 — 어제와 비교하는 값이라 자원보다 한 단 낮게 깝니다. 그래도 읽히기는 해야 해서
-   배경은 자원과 같은 만큼 덮고, 크기와 색으로만 무게를 낮춥니다. */
+/* 지표 — 어제와 비교하는 값이라 자원보다 한 단 낮게 깝니다. 알약 하나가 문장 하나라
+   가운데로 모읍니다.
+   간격은 gap 이 아니라 각자의 margin 입니다 — "매출"과 "0"은 떨어져야 하고
+   "0"과 "/시간"은 한 낱말처럼 붙어야 해서, 한 값으로는 둘 다 만족하지 못합니다. */
 .metric {
-  padding: 4px 8px;
+  justify-content: center;
+  gap: 0;
+  padding: 5.5px var(--space-xs);
 }
 
-.metric .tile__value {
-  font-size: var(--text-sm);
+.metric img.icon {
+  margin-inline-end: var(--space-2xs);
+}
+
+.metric .tile__label {
+  margin-inline-end: var(--space-xs);
 }
 
 /* 시간당 값은 부호가 곧 내용입니다. 늘고 있으면 초록, 줄고 있으면 빨강. */
@@ -333,9 +410,10 @@ img.icon {
   display: block;
   overflow: hidden;
   width: 100%;
-  height: 4px;
+  height: 2px;
   border-radius: 999px;
-  background: color-mix(in oklab, var(--ink-deep) 70%, transparent);
+  /* 트랙이 밝습니다. 어두운 카드 위에서는 이쪽이 "여기까지가 최대치" 로 읽힙니다. */
+  background: var(--text-dim);
 }
 
 .gauge__fill {
@@ -351,21 +429,27 @@ img.icon {
   background: var(--down);
 }
 
-/* ─── HUD 의 버튼 셋 ──────────────────────────────────────────────────────── */
-/* 동그란 아이콘 아래 이름. 누르는 것끼리는 같이 생겨야 "이건 눌러도 된다" 를
-   두 번 배우지 않습니다. */
+/* ─── 이슈 버튼 ───────────────────────────────────────────────────────────── */
+/* 화면 아래 한가운데. 이 게임에서 손가락이 가는 곳은 여기 하나뿐이라, 계기판 구석이
+   아니라 엄지가 닿는 자리에 둡니다. */
 
-.hud__tools {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-xs);
+.fab {
+  align-self: end;
+  justify-self: center;
+  padding-bottom: var(--fab-gap);
+  /* 버튼만 누르고, 그 아래 여백은 방으로 흘려 보냅니다. */
+  pointer-events: none;
+}
+
+.fab > .tool {
+  pointer-events: auto;
 }
 
 .tool {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: var(--space-2xs);
   padding: 0;
   border: none;
   background: none;
@@ -377,56 +461,45 @@ img.icon {
 .tool__circle {
   position: relative;
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: var(--fab-size);
+  height: var(--fab-size);
   place-items: center;
-  border: 1px solid color-mix(in oklab, var(--line-strong) 70%, transparent);
+  border: 1px solid var(--down);
   border-radius: 999px;
-  background: color-mix(in oklab, var(--surface) 82%, transparent);
+  background: var(--alert-surface);
   transition:
     transform 110ms var(--ease),
     border-color 140ms var(--ease);
 }
 
 .tool__icon {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
 }
 
 .tool__caption {
-  color: var(--text-dim);
-  font-size: var(--text-2xs);
+  color: var(--text);
+  font-size: var(--text-xs);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
-/* 볼 것이 쌓였을 때. 어두운 배경 위의 빨간 10px 글자는 읽히지 않아서,
-   개수는 동그라미 위에 얹은 배지가 말합니다 — 밝은 바탕에 어두운 글자라 대비가 큽니다.
-   이름표는 흰색으로 두고, 색은 테두리와 배지만 씁니다. */
-.tool--alert .tool__circle {
-  border-color: var(--down);
-  background: color-mix(in oklab, var(--down) 22%, var(--ink));
-}
-
-.tool--alert .tool__caption {
-  color: var(--text);
-}
-
+/* 몇 개가 쌓였는지는 동그라미 어깨에 얹은 배지가 말합니다. 버튼 자체가 이미 빨간
+   테두리라, 개수는 색이 아니라 숫자로만 말하면 됩니다. */
 .tool__badge {
   position: absolute;
-  top: -3px;
-  right: -5px;
-  min-width: 18px;
+  top: 0;
+  right: 0;
+  min-width: 20px;
   padding: 0 5px;
   border-radius: 999px;
   background: var(--down);
-  color: var(--ink-deep);
-  font-size: var(--text-2xs);
-  font-weight: 900;
+  color: var(--text);
+  font-size: var(--text-xs);
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  line-height: 18px;
+  line-height: 20px;
   text-align: center;
 }
 
@@ -500,7 +573,9 @@ img.icon {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: var(--space-sm) var(--space-sm) calc(var(--space-sm) + env(safe-area-inset-bottom));
+  /* 이슈 버튼을 덮지 않고 그 위에 섭니다 — 눌러서 연 것이 눌린 것을 가리면 안 됩니다. */
+  padding: var(--space-sm) var(--space-sm)
+    calc(var(--fab-block) + var(--fab-gap) + var(--space-sm));
   background: transparent;
 }
 

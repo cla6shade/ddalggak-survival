@@ -26,8 +26,10 @@ export class RateTile extends UiElement {
   }
 
   setValue(value: number): void {
+    // 부호를 뒤집어 넣는 쪽(서버비)이 0 을 넘기면 -0 이 됩니다. 0 은 0 입니다.
+    const amount = value === 0 ? 0 : value
     // 줄고 있으면 부호가 이미 붙어 있습니다. 늘고 있을 때만 `+` 를 얹습니다.
-    this.value.setText(`${value > 0 ? '+' : ''}${formatAmount(value, 1)}`)
+    this.value.setText(`${amount > 0 ? '+' : ''}${formatAmount(amount, 1)}`)
     this.toggleClass('rate--up', value > 0)
     this.toggleClass('rate--down', value < 0)
   }

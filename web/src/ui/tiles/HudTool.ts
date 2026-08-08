@@ -32,12 +32,11 @@ export class HudTool extends UiElement<'button'> {
     this.element.disabled = !enabled
   }
 
-  /** 배지에 쓸 개수. `0` 이면 배지를 감추고 경고 수식 클래스도 뗍니다. */
+  /** 배지에 쓸 개수. `0` 이면 배지를 감춥니다 — 빈 동그라미가 곧 "볼 것 없음" 입니다. */
   setCount(count: number): void {
     this.badge.hidden = count === 0
     const text = String(count)
     if (this.badge.textContent !== text) this.badge.textContent = text
-    this.toggleClass('tool--alert', count > 0)
   }
 
   /** 한 번 튕기는 애니메이션을 다시 재생합니다. */
