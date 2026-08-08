@@ -1,10 +1,13 @@
 import { GameCanvas } from './GameCanvas'
+import { ConfigLoader } from './ConfigLoader'
+import { Savepoint } from './Savepoint'
 import { AssetManager } from '@/assets/AssetManager'
 import { World } from '@/world/World'
 import { Clock } from '@/game/Clock'
 import { PlayerStatus } from '@/game/stats/PlayerStatus'
 import { ProductStatus } from '@/game/stats/ProductStatus'
 import { IssueManager } from '@/game/IssueManager'
+import { RoomActionMenus } from '@/game/actions/RoomActionCatalog'
 import { advanceEconomy } from '@/game/economy'
 import { MAX_QUALITY } from '@/game/calc/quality'
 import { formatActionOutcome } from '@/game/actions/RoomAction'
@@ -15,15 +18,19 @@ import { IssueButton } from '@/ui/screens/IssueButton'
 import { BottomSheet } from '@/ui/screens/BottomSheet'
 import { ToastStack } from '@/ui/screens/ToastStack'
 import { EndingScreen } from '@/ui/screens/EndingScreen'
+import { EndingCurtain } from '@/ui/screens/EndingCurtain'
 import { EndingManager } from '@/game/endings/EndingManager'
-import { rollChoiceEnding, rollsLawsuit } from '@/game/endings/EndingEvents'
-import type { EndingContext, EndingId, EndingResult } from '@/game/endings/Ending'
-import type { Issue, ResolveContext } from '@/game/issues/Issue'
+import { rollsLawsuit } from '@/game/endings/EndingEvents'
+import type { EndingId, EndingResult } from '@/game/endings/Ending'
+import type { Issue, ResolveOutcome } from '@/game/issues/Issue'
 import type { IssueOption } from '@/game/issues/IssueOption'
-import type { ActionContext, RoomAction, RoomActionMenu } from '@/game/actions/RoomAction'
+import type { ActionOutcome, RoomAction, RoomActionMenu } from '@/game/actions/RoomAction'
 
-/** 고정 시드. 같은 값이면 같은 판이 재현됩니다. */
+/** 기본 시드. 같은 값이면 같은 판이 재현됩니다. */
 const SEED = 1
+
+/** 시간만 흘렀을 때 세이브를 다시 쓰는 간격(게임 분). */
+const SAVE_INTERVAL = 10
 
 type GamePhase = 'running' | 'ended'
 
@@ -34,7 +41,7 @@ type GamePhase = 'running' | 'ended'
  * 들고 있게 되므로, `updateClock`/`updatePlayer`/`updateProduct` 를 거칩니다.
  * 바뀐 쪽의 계기판만 다시 그립니다.
  */
-class Session {
+export class Session {
   canvas: GameCanvas | null = null
   hud: HudManager | null = null
   readonly assets = new AssetManager()
@@ -43,20 +50,69 @@ class Session {
   readonly clock = new Clock()
   readonly player = new PlayerStatus()
   readonly product = new ProductStatus()
-  readonly issues = new IssueManager()
-  readonly endings = new EndingManager()
-  readonly rng = new Rng(SEED)
 
+  /**
+   * 아래 넷은 생성자 본문에서 세웁니다 — `rng` 는 시드를 인자로 받아야 하고,
+   * 나머지 셋은 `this` 를 받아야 합니다. 필드 초기자는 선언 순서대로 도는 탓에
+   * 뒤에 선언된 `player`·`rng` 가 아직 `undefined` 인 채로 넘어갑니다.
+   */
+  readonly rng: Rng
+  readonly issues: IssueManager
+  readonly endings: EndingManager
+  readonly menus: RoomActionMenus
+
+  /** 어제의 앱. 첫날에는 없습니다 — `0` 과 "어제 없음" 은 다른 말입니다. */
+  yesterday: ProductStatus | null = null
+
+  private readonly config = new ConfigLoader()
   private issueButton: IssueButton | null = null
   private sheet: BottomSheet | null = null
   private toasts: ToastStack | null = null
   private endingScreen: EndingScreen | null = null
+  private curtain: EndingCurtain | null = null
+  /** 판이 끝났을 때 계기판을 걷으려고 들고 있습니다. */
+  private interfaceRoot: HTMLElement | null = null
   private phase: GamePhase = 'running'
-  /** 어제의 앱. 첫날에는 없습니다 — `0` 과 "어제 없음" 은 다른 말입니다. */
-  private yesterday: ProductStatus | null = null
-  private lastDay = 1
-  /** 마지막으로 경제를 반영한 시각(판 시작 후 총 분). */
-  private settledAt = 0
+  /** 마지막으로 세이브를 쓴 시각(판 시작 후 총 분). 세이브에는 실리지 않습니다. */
+  private savedAt = 0
+
+  /**
+   * 아래 둘은 세이브가 함께 싣고 되살립니다 — `Savepoint` 가 읽고 써야 해서 열어 둡니다.
+   * 날이 바뀐 것을 알아채는 기준과, 마지막으로 경제를 반영한 시각(판 시작 후 총 분).
+   */
+  lastDay = 1
+  settledAt = 0
+
+  /**
+   * `seed` 를 밖에서 받는 이유는 시뮬레이터입니다 — 판마다 시드를 갈아 끼워야
+   * 여러 판의 통계를 낼 수 있습니다. 브라우저는 인자 없이 불러 늘 같은 판으로 엽니다.
+   */
+  constructor(seed: number = SEED) {
+    this.rng = new Rng(seed)
+    this.issues = new IssueManager(this)
+    this.endings = new EndingManager(this)
+    this.menus = new RoomActionMenus(this)
+  }
+
+  /** 판이 끝났는지. 끝난 판은 무엇을 불러도 움직이지 않습니다. */
+  get ended(): boolean {
+    return this.phase !== 'running'
+  }
+
+  /** 이 판을 끝낸 엔딩. 아직 돌고 있으면 `null` 입니다. */
+  get result(): EndingResult | null {
+    return this.endings.current
+  }
+
+  /**
+   * 이어서 시작할 판이 남아 있는지.
+   *
+   * 인트로를 띄울지 판단하는 데만 씁니다 — 이어서 하는 사람에게는 「당장 해보자」를
+   * 다시 들이밀 이유가 없습니다. 되살리는 것은 여전히 {@link start} 가 합니다.
+   */
+  get hasSavepoint(): boolean {
+    return this.config.load() !== null
+  }
 
   start(element: HTMLCanvasElement): void {
     this.canvas ??= new GameCanvas(element, this.world)
@@ -64,10 +120,12 @@ class Session {
     // 계기판은 아이콘을 아틀라스에서 잘라 쓰므로 에셋을 불러온 뒤에 세웁니다.
     const root = document.querySelector('#interface')
     if (!(root instanceof HTMLElement)) throw new Error('#interface 를 찾지 못했습니다')
+    this.interfaceRoot = root
     if (!this.hud) {
       this.sheet = new BottomSheet()
-      this.toasts = new ToastStack(this.icons)
+      this.toasts = new ToastStack()
       this.endingScreen = new EndingScreen(this.icons, () => window.location.reload())
+      this.curtain = new EndingCurtain(this.assets)
       this.hud = new HudManager(this.icons)
       this.issueButton = new IssueButton(this.icons, () => this.sheet?.toggle())
       this.hud.mountTo(root)
@@ -75,9 +133,17 @@ class Session {
       this.toasts.mountTo(root)
       this.sheet.mountTo(root)
       this.endingScreen.mountTo(root)
+      this.curtain.mountTo(root)
     }
 
-    this.showIssueToast(this.issues.spawnInitialIssue(this.rng))
+    // 이어서 시작하는 판에는 첫 이슈를 다시 터뜨리지 않습니다 — 세이브가 이미 들고 있습니다.
+    const saved = this.config.load()
+    if (saved) {
+      saved.applyTo(this)
+      this.savedAt = this.settledAt
+    } else {
+      this.showIssueToast(this.issues.spawnInitialIssue())
+    }
 
     this.refreshHud()
     this.canvas.start()
@@ -99,6 +165,7 @@ class Session {
     this.hud?.setClock(this.clock)
     if (this.checkEnding()) return
     if (this.clock.day !== this.lastDay) this.rollOverDay()
+    this.save()
   }
 
   updateClock(patch: Partial<Clock>): void {
@@ -107,19 +174,22 @@ class Session {
     this.hud?.setClock(this.clock)
     if (this.checkEnding()) return
     if (this.clock.day !== this.lastDay) this.rollOverDay()
+    this.save(true)
   }
 
   updatePlayer(patch: Partial<PlayerStatus>): void {
     if (this.phase !== 'running') return
     Object.assign(this.player, patch)
     this.hud?.setPlayer(this.player)
-    this.checkEnding()
+    if (this.checkEnding()) return
+    this.save(true)
   }
 
   updateProduct(patch: Partial<ProductStatus>): void {
     if (this.phase !== 'running') return
     Object.assign(this.product, patch)
     this.hud?.setProduct(this.product, this.yesterday)
+    this.save(true)
   }
 
   /** 이슈처럼 스스로 상태를 들고 있는 쪽이 바뀌었을 때 부릅니다. */
@@ -142,42 +212,6 @@ class Session {
     this.world.player.approach(this.world.workDesk, () => this.resolveChoice(issue, option))
   }
 
-  /** 책상 앞에 섰습니다. 이제 판정하고 그 결과를 세상에 반영합니다. */
-  private resolveChoice(issue: Issue, option: IssueOption): void {
-    if (this.phase !== 'running') return
-    const outcome = issue.resolve(option, this.createResolveContext())
-    if (outcome.blocked) return
-
-    if (outcome.solved) {
-      this.issues.solve(issue.code)
-      this.product.quality = Math.min(MAX_QUALITY, this.product.quality + outcome.qualityGain)
-      this.toasts?.push('해결', `${issue.title} · 품질 +${outcome.qualityGain}`, 'good')
-    } else {
-      this.toasts?.push('실패', option.title, 'bad')
-    }
-
-    if (outcome.spawnedNew) {
-      const spawned = this.issues.spawnRandomIssue(this.rng)
-      if (spawned) this.showIssueToast(spawned)
-    }
-
-    // 기존 자원 고갈 엔딩을 확률 사건보다 먼저 확정합니다.
-    if (this.checkEnding()) return
-
-    const eventEnding = rollChoiceEnding(issue, option, outcome, this.rng)
-    if (eventEnding) {
-      this.triggerEnding(eventEnding)
-      return
-    }
-
-    this.clock.advanceMinutes(outcome.minutes)
-    this.settleEconomy()
-    this.hud?.setClock(this.clock)
-    if (this.checkEnding()) return
-    if (this.clock.day !== this.lastDay) this.rollOverDay()
-    this.refreshHud()
-  }
-
   /**
    * 물건 앞에 섰습니다. 그 물건이 내놓는 것들을 폅니다.
    *
@@ -190,78 +224,135 @@ class Session {
   }
 
   /**
+   * 책상 앞에 섰습니다. 지금 열려 있는 이슈들을 폅니다.
+   *
+   * 선택지를 눌러 여기까지 걸어온 경우에도 발화합니다 — `Character.onArrive` 가
+   * `onInteract` 를 `arrivalTask` 보다 먼저 부르기 때문입니다. 판정이 끝나고 나면
+   * 남은 이슈 목록이 그대로 떠 있게 되는데, 자리를 지키고 있으니 그게 맞습니다.
+   */
+  openIssueList(): void {
+    if (this.phase !== 'running') return
+    this.sheet?.showIssues()
+  }
+
+  /**
    * 행동 하나를 눌렀습니다.
    *
    * 판정은 행동이 합니다. 여기서는 그 결과를 세상에 반영합니다 —
    * `chooseOption` 과 같은 순서입니다.
+   *
+   * 무엇이 오갔는지 돌려주는 이유는 시뮬레이터입니다 — 화면 없이 도는 쪽은
+   * 토스트를 못 보므로, 기록할 것을 반환값으로 받아야 합니다.
+   * 끝난 판이면 `null` 입니다.
    */
-  performAction(action: RoomAction): void {
-    if (this.phase !== 'running') return
+  performAction(action: RoomAction): ActionOutcome | null {
+    if (this.phase !== 'running') return null
 
-    const outcome = action.perform(this.createActionContext())
+    const outcome = action.perform()
     // 판이 열린 사이에 잔고가 떨어졌을 수 있습니다. 잠긴 줄은 그때 다시 그려지지 않습니다.
     if (outcome.blocked) {
       this.toasts?.push('잔고 부족', action.title, 'bad')
-      return
+      return outcome
     }
 
     this.toasts?.push(action.title, formatActionOutcome(outcome), 'good')
 
     // 행동 값으로 자원이 바닥난 순간 먼저 끝냅니다. 아래 시간 정산에서
     // 매출이 들어와 0원을 잠시 지나친 사실이 사라지면 "바닥나면 종료"가 아닙니다.
-    if (this.checkEnding()) return
+    if (this.checkEnding()) return outcome
 
     this.clock.advanceMinutes(outcome.minutes)
     this.settleEconomy()
     this.hud?.setClock(this.clock)
-    if (this.checkEnding()) return
+    if (this.checkEnding()) return outcome
     if (this.clock.day !== this.lastDay) this.rollOverDay()
     this.refreshHud()
+    this.save(true)
+
+    return outcome
   }
 
-  /** 이슈들이 판정에 쓰는 것들. */
-  createResolveContext(): ResolveContext {
-    return { player: this.player, day: this.clock.day, rng: this.rng }
+  /**
+   * 확률 사건으로 판을 끝냅니다.
+   *
+   * 이슈가 방치 판정에서 직접 부르므로 열려 있습니다. 부른 쪽이 `settleEconomy`
+   * 한복판일 수 있어서, 부른 뒤에는 `phase` 를 보고 하던 일을 접어야 합니다.
+   */
+  triggerEnding(id: EndingId): void {
+    if (this.phase !== 'running') return
+    this.finish(this.endings.trigger(id))
   }
 
-  /** 방 행동들이 쓰는 것들. 자는 것처럼 이슈를 읽어야 하는 행동이 있습니다. */
-  createActionContext(): ActionContext {
-    return { ...this.createResolveContext(), issues: this.issues }
-  }
+  /**
+   * 책상 앞에 섰습니다. 이제 판정하고 그 결과를 세상에 반영합니다.
+   *
+   * `chooseOption` 은 걸어간 뒤에 이걸 부릅니다. 열려 있는 이유는 시뮬레이터입니다 —
+   * 화면 없이 도는 쪽은 캐릭터를 걷게 할 수 없어 여기로 바로 들어옵니다.
+   * 끝난 판이면 `null` 입니다.
+   */
+  resolveChoice(issue: Issue, option: IssueOption): ResolveOutcome | null {
+    if (this.phase !== 'running') return null
+    const outcome = issue.resolve(option)
+    if (outcome.blocked) return outcome
 
-  /** 엔딩 규칙들이 읽는 상태 묶음. Session 자체를 넘기지 않아 규칙의 쓰기를 막습니다. */
-  private createEndingContext(): EndingContext {
-    return {
-      player: this.player,
-      product: this.product,
-      clock: this.clock,
-      issues: this.issues,
+    if (outcome.solved) {
+      this.issues.solve(issue.code)
+      this.product.quality = Math.min(MAX_QUALITY, this.product.quality + outcome.qualityGain)
+      this.toasts?.push('해결', `${issue.title} · 품질 +${outcome.qualityGain}`, 'good')
+    } else {
+      this.toasts?.push('실패', option.title, 'bad')
     }
+
+    if (outcome.spawnedNew) {
+      const spawned = this.issues.spawnRandomIssue()
+      if (spawned) this.showIssueToast(spawned)
+    }
+
+    // 기존 자원 고갈 엔딩을 확률 사건보다 먼저 확정합니다.
+    if (this.checkEnding()) return outcome
+
+    const eventEnding = issue.rollChoiceEnding(option, outcome)
+    if (eventEnding) {
+      this.triggerEnding(eventEnding)
+      return outcome
+    }
+
+    this.clock.advanceMinutes(outcome.minutes)
+    this.settleEconomy()
+    this.hud?.setClock(this.clock)
+    if (this.checkEnding()) return outcome
+    if (this.clock.day !== this.lastDay) this.rollOverDay()
+    this.refreshHud()
+    this.save(true)
+
+    return outcome
   }
 
   /** 지금 조건을 만족한 엔딩이 있으면 판을 끝냅니다. */
   private checkEnding(): boolean {
     if (this.phase !== 'running') return true
 
-    const ending = this.endings.evaluate(this.createEndingContext())
+    const ending = this.endings.evaluate()
     if (!ending) return false
 
     this.finish(ending)
     return true
   }
 
-  /** 선택이나 시간 경과에서 발생한 확률 사건으로 판을 끝냅니다. */
-  private triggerEnding(id: EndingId): void {
-    if (this.phase !== 'running') return
-    this.finish(this.endings.trigger(id, this.createEndingContext()))
-  }
-
   private finish(ending: EndingResult): void {
     this.phase = 'ended'
+    // 엔딩은 판의 끝입니다. 이어서 시작할 자리를 남겨 두지 않습니다.
+    this.config.clear()
     this.refreshHud()
     this.sheet?.hide()
     this.canvas?.stop()
-    this.endingScreen?.show(ending)
+    // 더 볼 숫자가 없습니다. 계기판과 이슈 버튼을 걷습니다.
+    this.interfaceRoot?.classList.add('interface--ended')
+
+    // 결과를 바로 들이밀지 않습니다. 끝났다는 것만 먼저 보여 주고, 그 다음에 숫자를 폅니다.
+    const screen = this.endingScreen
+    if (this.curtain && screen) this.curtain.show(() => screen.show(ending))
+    else screen?.show(ending)
   }
 
   /**
@@ -274,10 +365,14 @@ class Session {
     if (minutes <= 0) return
     this.settledAt = now
 
-    const pressure = this.issues.applyNeglect(minutes, this.createResolveContext())
+    const pressure = this.issues.applyNeglect(minutes)
+    // 방치 판정이 판을 끝냈을 수 있습니다. `finish` 는 토스트를 걷지 않아서,
+    // 그대로 흘리면 아래 `spawnDueIssues` 가 엔딩 화면 위로 「이슈 발생」 을 띄웁니다.
+    if (this.phase !== 'running') return
+
     advanceEconomy(minutes, this.product, this.player, pressure)
 
-    for (const issue of this.issues.spawnDueIssues(now, this.clock.day, this.rng)) {
+    for (const issue of this.issues.spawnDueIssues(now)) {
       this.showIssueToast(issue)
     }
     this.hud?.setPlayer(this.player)
@@ -285,6 +380,21 @@ class Session {
 
     if (this.checkEnding()) return
     if (rollsLawsuit(minutes, this.rng)) this.triggerEnding('lawsuit')
+  }
+
+  /**
+   * 지금 판을 세이브에 씁니다.
+   *
+   */
+  private save(force = false): void {
+    // 끝난 판을 쓰면 `finish` 가 방금 지운 세이브가 되살아납니다.
+    if (this.phase !== 'running') return
+
+    const now = this.clock.totalMinutes
+    if (!force && now - this.savedAt < SAVE_INTERVAL) return
+    this.savedAt = now
+
+    this.config.save(Savepoint.capture(this))
   }
 
   /** 터진 이슈 하나를 화면에 알립니다 — 토스트, 이슈 버튼, 열려 있는 판. */
