@@ -121,11 +121,26 @@ export class BottomSheet extends UiElement<'div'> {
 
     if (this.selected) {
       this.renderHead(this.selected.title, true)
-      this.rows.replaceChildren(...this.renderOptionRows(this.selected))
+      this.rows.replaceChildren(
+        this.renderIssueDescription(this.selected),
+        ...this.renderOptionRows(this.selected),
+      )
     } else {
       this.renderHead(`이슈 ${session.issues.count}건`, false)
       this.rows.replaceChildren(...this.renderIssueRows())
     }
+  }
+
+  /** 기획안에 적힌 이슈 설명. 선택지보다 먼저 읽히는 한 덩어리입니다. */
+  private renderIssueDescription(issue: Issue): HTMLDivElement {
+    const description = document.createElement('div')
+    description.className = 'panel issue-description'
+    description.append(
+      createSpan('issue-description__label', '이슈 발생'),
+      createSpan('issue-description__text', issue.description),
+    )
+
+    return description
   }
 
   private open(): void {

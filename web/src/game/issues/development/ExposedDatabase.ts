@@ -22,13 +22,14 @@ export class ExposedDatabase extends Issue {
       'ISSUE-DEV-005',
       'DEV',
       '데이터베이스 접근 권한이 공개되어 있습니다',
+      '데이터베이스에 적절한 접근 제한이 적용되지 않아 허가받지 않은 사용자가 데이터를 조회하거나 변경할 가능성이 있습니다. 사용자 정보가 노출되기 전에 권한 설정을 수정해야 합니다.',
       false,
       createNeglectEffect({ userDeltaPerHour: -0.5, qualityDeltaPerHour: -0.12 }),
       [
         createDirectOption('데이터베이스의 공개 접근을 모두 차단한다', 0.25, 24),
         createDirectOption('테이블별 권한을 하나씩 확인한다', 0.6, 71),
         createDirectOption('보안 경험이 있는 개발자에게 검토를 맡긴다', 0.7, 15, 30_000, 0.12),
-        createDdalggakOption(0.45, 0.55),
+        createDdalggakOption(0.45),
         createGambleOption('설정 화면의 스위치를 아무거나 눌러본다'),
       ],
     )

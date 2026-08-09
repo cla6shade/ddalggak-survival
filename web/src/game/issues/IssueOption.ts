@@ -20,8 +20,6 @@ export interface IssueOption {
   creditCost: number
   /** 이 선택지에 걸리는 게임 시간(분). */
   minutes: number
-  /** 실패했을 때 새 이슈가 딸려 나올 확률. */
-  spawnChance: number
   /** 누를 때마다 아이디어를 뺏길 확률. 성공 판정과 별개로 굴립니다. */
   theftChance: number
   /**
@@ -33,8 +31,8 @@ export interface IssueOption {
   qualityGain: number
 }
 
-/** `'ddalggak'` 선택지. 이슈마다 다른 두 값만 받고 나머지는 고정입니다. */
-export function createDdalggakOption(success: number, spawnChance: number): IssueOption {
+/** `'ddalggak'` 선택지. 이슈마다 다른 성공률만 받고 나머지는 고정입니다. */
+export function createDdalggakOption(success: number): IssueOption {
   return {
     title: '딸깍',
     kind: 'ddalggak',
@@ -43,7 +41,6 @@ export function createDdalggakOption(success: number, spawnChance: number): Issu
     moneyCost: 0,
     creditCost: 15,
     minutes: 10,
-    spawnChance,
     theftChance: 0,
     failureEndings: [],
     qualityGain: 3,
@@ -63,7 +60,6 @@ export function createGambleOption(
     moneyCost: 0,
     creditCost: 0,
     minutes: 15,
-    spawnChance: 0,
     theftChance: 0,
     failureEndings,
     qualityGain: 3,
@@ -86,7 +82,6 @@ export function createDirectOption(
     moneyCost,
     creditCost: 0,
     minutes: Math.max(15, staminaCost * 9),
-    spawnChance: 0,
     theftChance,
     failureEndings: [],
     qualityGain: 6,

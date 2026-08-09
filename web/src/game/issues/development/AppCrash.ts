@@ -10,13 +10,14 @@ export class AppCrash extends Issue {
       'ISSUE-DEV-003',
       'DEV',
       '애플리케이션이 실행되지 않습니다',
+      '서비스에 접속해도 애플리케이션이 정상적으로 시작되지 않습니다. 현재 상태에서는 사용자가 어떤 기능도 이용할 수 없습니다.',
       false,
       createNeglectEffect({ userDeltaPerHour: -3, qualityDeltaPerHour: -0.3, revenueMultiplier: 0 }),
       [
         createDirectOption('새로고침하고 다시 배포한다', 0.15, 15),
         createDirectOption('오류 로그를 직접 확인한다', 0.65, 58),
         createDirectOption('정상 작동했던 이전 버전으로 되돌린다', 0.85, 29),
-        createDdalggakOption(0.6, 0.55),
+        createDdalggakOption(0.6),
         createGambleOption('에러 메시지를 검색해 첫 번째 답변을 붙여넣는다', [
           { id: 'hacked', chance: 0.4 },
         ]),

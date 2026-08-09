@@ -22,13 +22,14 @@ export class PhoneFlood extends Issue {
       'ISSUE-OPS-001',
       'OPS',
       '고객 문의가 전화로 몰리고 있습니다',
+      '고객이 서비스 이용 방법과 오류에 대해 계속 전화로 문의하고 있습니다. 대표가 직접 모든 전화를 받으면 다른 업무를 진행하기 어렵고, 응답이 늦으면 고객 불만이 커질 수 있습니다.',
       false,
       createNeglectEffect({ userDeltaPerHour: -0.5, qualityDeltaPerHour: -0.12, staminaRecoveryPenalty: 12 }),
       [
         createDirectOption('걸려오는 전화를 직접 받는다', 0.3, 71),
         createDirectOption('자주 묻는 질문 페이지를 만든다', 0.5, 58),
         createDirectOption('전화 문의를 예약제로 전환한다', 0.55, 29, 10_000),
-        createDdalggakOption(0.5, 0.55),
+        createDdalggakOption(0.5),
         createGambleOption('전화를 받지 않는다'),
       ],
     )

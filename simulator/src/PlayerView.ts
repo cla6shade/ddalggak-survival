@@ -49,7 +49,7 @@ export class NeglectView {
 /**
  * 대응책 한 줄. 화면(`BottomSheet.renderOptionRows`)에 실제로 뜨는 값만 베껴 담습니다.
  *
- * `theftChance` · `spawnChance` · `failureEndings` · `qualityGain` 은 **필드 자체를
+ * `theftChance` · `failureEndings` · `qualityGain` 은 **필드 자체를
  * 만들지 않습니다.** 원본 `IssueOption` 을 들고 있지도 않습니다 — 참조를 남기면
  * 정책이 타입을 우회해 들여다볼 수 있고, 기록으로 새어 나가기도 합니다.
  */
@@ -156,7 +156,7 @@ export class MenuView {
  * 계기판([HudManager])이 그리는 타일 8종과 시트가 펴는 목록이 경계입니다.
  * **품질·누적 매출·누적 지출은 계기판에 없어서 여기에도 없습니다** — 품질은 해결
  * 토스트의 `품질 +N` 으로 증감만 보이고, 누적 값은 엔딩 화면에서야 나옵니다.
- * 다음 이슈가 언제 터질지, 난수가 어디까지 갔는지도 물론 없습니다.
+ * 난수가 어디까지 갔는지도 물론 없습니다.
  *
  * 만드는 동안 난수를 한 번도 굴리지 않습니다 — `getSuccessRate` · `isAffordable` ·
  * `getStaminaGain`(→ `applyNeglect(0)`) 이 전부 난수를 안 씁니다.

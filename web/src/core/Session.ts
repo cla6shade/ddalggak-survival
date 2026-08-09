@@ -303,10 +303,10 @@ export class Session {
       this.toasts?.push('실패', option.title, 'bad')
     }
 
-    if (outcome.spawnedNew) {
-      const spawned = this.issues.spawnRandomIssue()
-      if (spawned) this.showIssueToast(spawned)
-    }
+    // 성공·실패와 무관하게 시도 한 번마다 현재 것과 다른 이슈를 하나 엽니다.
+    const spawned = this.issues.spawnRandomIssue(issue.code)
+    outcome.spawnedNew = spawned !== null
+    if (spawned) this.showIssueToast(spawned)
 
     // 기존 자원 고갈 엔딩을 확률 사건보다 먼저 확정합니다.
     if (this.checkEnding()) return outcome
@@ -366,15 +366,10 @@ export class Session {
     this.settledAt = now
 
     const pressure = this.issues.applyNeglect(minutes)
-    // 방치 판정이 판을 끝냈을 수 있습니다. `finish` 는 토스트를 걷지 않아서,
-    // 그대로 흘리면 아래 `spawnDueIssues` 가 엔딩 화면 위로 「이슈 발생」 을 띄웁니다.
+    // 방치 판정이 판을 끝냈을 수 있습니다.
     if (this.phase !== 'running') return
 
     advanceEconomy(minutes, this.product, this.player, pressure)
-
-    for (const issue of this.issues.spawnDueIssues(now)) {
-      this.showIssueToast(issue)
-    }
     this.hud?.setPlayer(this.player)
     this.hud?.setProduct(this.product, this.yesterday)
 

@@ -39,6 +39,8 @@ export class Issue {
     readonly code: string,
     readonly domain: DomainCode,
     readonly title: string,
+    /** 기획안의 이슈 설명. 발생 창과 이슈 상세 화면에서 함께 사용합니다. */
+    readonly description: string,
     /** 1일차 첫 이슈 후보인지. */
     readonly initial: boolean,
     readonly neglect: NeglectEffect,
@@ -92,14 +94,14 @@ export class Issue {
     player.credit -= option.creditCost
 
     const solved = rng.rollChance(this.getSuccessRate(option))
-    const spawnedNew = !solved && option.spawnChance > 0 && rng.rollChance(option.spawnChance)
     // 도난은 성공 판정과 독립으로 굴립니다.
     const stolen = option.theftChance > 0 && rng.rollChance(option.theftChance)
 
     return {
       blocked: false,
       solved,
-      spawnedNew,
+      // 실제 발생 여부는 선택 판정 뒤 Session이 닫힌 이슈를 뽑으며 채웁니다.
+      spawnedNew: false,
       stolen,
       minutes: option.minutes,
       qualityGain: solved ? option.qualityGain : 0,

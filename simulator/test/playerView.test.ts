@@ -6,13 +6,11 @@ import { PlayerView } from '../src/PlayerView'
 /** 화면에 없는 값이 정책에게 새지 않는지. 「실제 플레이어처럼」의 전부입니다. */
 const HIDDEN_KEYS = [
   'theftChance',
-  'spawnChance',
   'failureEndings',
   'qualityGain',
   'quality',
   'revenue',
   'spend',
-  'nextSpawnAt',
   'state',
   'session',
   // 화면에는 날짜 배수가 적용된 `successRate` 만 뜹니다. 기준값은 숨은 값입니다.

@@ -760,6 +760,28 @@ img.icon {
   word-break: keep-all;
 }
 
+.issue-description {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  background: var(--alert-surface);
+}
+
+.issue-description__label {
+  color: var(--down);
+  font-size: var(--text-xs);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.issue-description__text {
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
 .option__label {
   grid-area: label;
   font-size: var(--text-base);
@@ -846,8 +868,8 @@ img.icon {
 }
 
 /* ─── 알림 줄 ─────────────────────────────────────────────────────────────── */
-/* 이슈는 시간이 흐르는 동안 조용히 터집니다. 계기판 숫자만 1 올라가서는 무엇이
-   터졌는지 알 수 없어서, 그 순간 이름을 화면 맨 위에 세웁니다.
+/* 이슈는 선택 결과와 함께 새로 터집니다. 계기판 숫자만 1 올라가서는 무엇이
+   생겼는지 알 수 없어서, 그 순간 이름을 화면 맨 위에 세웁니다.
    읽는 것이지 누르는 것이 아니라 입력은 통과시킵니다. */
 
 /* 계기판 바로 아래에 섭니다. `#interface` 의 아래 칸(`1fr`)에 붙여 놓고 위로 붙이면

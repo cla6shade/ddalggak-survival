@@ -39,12 +39,6 @@ export class Rng {
     return Math.floor(this.next() * max)
   }
 
-  /** 지수분포. 포아송 과정에서 다음 사건까지의 대기 시간입니다. */
-  nextWaitingTime(rate: number): number {
-    if (rate <= 0) return Number.POSITIVE_INFINITY
-    return -Math.log(1 - this.next()) / rate
-  }
-
   rollChance(probability: number): boolean {
     return this.next() < probability
   }

@@ -17,11 +17,11 @@ for (const policy of PolicyRegistry.names) {
   })
 }
 
-test('손을 놓으면 반드시 엔딩에 닿는다', () => {
-  // 방치했는데 안 끝나는 게임이면 「버티기만 해도 되는 게임」입니다.
+test('손을 놓은 판도 스텝 상한에 걸리지 않는다', () => {
+  // 시간만으로 일반 이슈가 늘지는 않지만, 시뮬레이터 자체는 정상 종료해야 합니다.
   for (const seed of SEEDS) {
     const { outcome } = Playthrough.play(seed, 'idle', new SimConfig({ maxDays: 90 }))
-    assert.equal(outcome.reason, 'ending', `시드 ${seed} 의 방치 판이 안 끝났습니다`)
+    assert.notEqual(outcome.reason, 'aborted', `시드 ${seed} 의 방치 판이 멈췄습니다`)
   }
 })
 
