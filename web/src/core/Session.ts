@@ -26,9 +26,6 @@ import type { Issue, ResolveOutcome } from '@/game/issues/Issue'
 import type { IssueOption } from '@/game/issues/IssueOption'
 import type { ActionOutcome, RoomAction, RoomActionMenu } from '@/game/actions/RoomAction'
 
-/** 기본 시드. 같은 값이면 같은 판이 재현됩니다. */
-const SEED = 1
-
 /** 시간만 흘렀을 때 세이브를 다시 쓰는 간격(게임 분). */
 const SAVE_INTERVAL = 10
 
@@ -84,11 +81,11 @@ export class Session {
   settledAt = 0
 
   /**
-   * `seed` 를 밖에서 받는 이유는 시뮬레이터입니다 — 판마다 시드를 갈아 끼워야
-   * 여러 판의 통계를 낼 수 있습니다. 브라우저는 인자 없이 불러 늘 같은 판으로 엽니다.
+   * 브라우저는 인자 없이 만들어 매 판 새 수열을 쓰고, 시뮬레이터는 숫자를 직접 넣어
+   * 같은 판을 재현합니다.
    */
-  constructor(seed: number = SEED) {
-    this.rng = new Rng(seed)
+  constructor(seed?: number) {
+    this.rng = new Rng(seed ?? createRandomSeed())
     this.issues = new IssueManager(this)
     this.endings = new EndingManager(this)
     this.menus = new RoomActionMenus(this)
@@ -412,6 +409,13 @@ export class Session {
     this.yesterday = this.product.clone()
     this.hud?.setProduct(this.product, this.yesterday)
   }
+}
+
+/** 브라우저 새 게임용 32비트 시드. 보안 목적이 아니라 판의 수열을 섞기 위한 값입니다. */
+function createRandomSeed(): number {
+  const value = new Int32Array(1)
+  crypto.getRandomValues(value)
+  return value[0] ?? Date.now()
 }
 
 export const session = new Session()
