@@ -1,4 +1,3 @@
-import { getCreditPurchaseAmount, getCreditPurchaseCost } from '../calc/creditPurchase'
 import { getSuccessRateForDay } from '../calc/successRate'
 import type { IssueOption } from './IssueOption'
 import type { NeglectEffect, NeglectPressure } from './NeglectEffect'
@@ -53,19 +52,19 @@ export class Issue {
   }
 
   /**
-   * 지금 이 선택지를 누를 수 있는지. 모자란 크레딧은 돈으로 환산해 함께 봅니다.
+   * 지금 이 선택지를 누를 수 있는지. 크레딧은 모자라면 그대로 막습니다 —
+   * 돈으로 메워 주지 않습니다.
    * 체력은 보지 않습니다 — 음수로 내려가도 막지 않습니다.
    */
   isAffordable(option: IssueOption): boolean {
     const { player } = this.session
-    const missingCredit = Math.max(0, option.creditCost - player.credit)
-    const creditMoney = missingCredit > 0 ? getCreditPurchaseCost(missingCredit) : 0
+    if (player.credit < option.creditCost) return false
 
-    return player.money - option.moneyCost - creditMoney >= 0
+    return player.money - option.moneyCost >= 0
   }
 
   /**
-   * 선택지 하나를 실행합니다. 크레딧 사기 → 자원 차감 → 성공 판정 → 도난 판정 순입니다.
+   * 선택지 하나를 실행합니다. 자원 차감 → 성공 판정 → 도난 판정 순입니다.
    *
    * `player` 만 제자리에서 고칩니다. 이슈를 열고 닫는 것과 시계를 미는 것은
    * `ResolveOutcome` 을 받은 쪽이 합니다.
@@ -81,13 +80,6 @@ export class Issue {
       qualityGain: 0,
     }
     if (!this.isAffordable(option)) return miss
-
-    // 크레딧이 모자라면 사서 씁니다. 낱개로는 못 사서 묶음만큼 남습니다.
-    const missingCredit = Math.max(0, option.creditCost - player.credit)
-    if (missingCredit > 0) {
-      player.money -= getCreditPurchaseCost(missingCredit)
-      player.credit += getCreditPurchaseAmount(missingCredit)
-    }
 
     player.stamina -= option.staminaCost
     player.money -= option.moneyCost
