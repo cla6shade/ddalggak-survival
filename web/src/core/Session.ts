@@ -299,14 +299,14 @@ export class Session {
       this.issues.solve(issue.code)
       this.product.quality = Math.min(MAX_QUALITY, this.product.quality + outcome.qualityGain)
       this.toasts?.push('해결', `${issue.title} · 품질 +${outcome.qualityGain}`, 'good')
+
+      // 하나를 해결했을 때만, 방금 해결한 것과 다른 이슈를 하나 엽니다.
+      const spawned = this.issues.spawnRandomIssue(issue.code)
+      outcome.spawnedNew = spawned !== null
+      if (spawned) this.showIssueToast(spawned)
     } else {
       this.toasts?.push('실패', option.title, 'bad')
     }
-
-    // 성공·실패와 무관하게 시도 한 번마다 현재 것과 다른 이슈를 하나 엽니다.
-    const spawned = this.issues.spawnRandomIssue(issue.code)
-    outcome.spawnedNew = spawned !== null
-    if (spawned) this.showIssueToast(spawned)
 
     // 기존 자원 고갈 엔딩을 확률 사건보다 먼저 확정합니다.
     if (this.checkEnding()) return outcome

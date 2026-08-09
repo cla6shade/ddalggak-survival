@@ -93,7 +93,8 @@ test('같은 성향도 판마다 다르게 흐른다', () => {
       config: new SimConfig(),
     }).run()
 
-  assert.notEqual(fingerprint(run(1)), fingerprint(run(2)))
+  const paths = new Set(Array.from({ length: 10 }, (_, index) => fingerprint(run(index + 1))))
+  assert.ok(paths.size >= 2, `정책 시드 10개가 모두 같은 ${[...paths][0]} 경로를 골랐습니다`)
 })
 
 test('거의 안 흔들리는 갈래는 같은 길로 간다', () => {

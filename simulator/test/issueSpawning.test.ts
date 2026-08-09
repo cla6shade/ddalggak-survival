@@ -14,8 +14,11 @@ test('첫 이슈는 초기 후보 3개 중 하나만 열린다', () => {
   }
 })
 
-test('선택지를 시도하면 성공·실패와 무관하게 다른 이슈 하나가 열린다', () => {
-  for (let seed = 1; seed <= 20; seed += 1) {
+test('성공하면 다른 이슈가 하나 열리고 실패하면 추가되지 않는다', () => {
+  let sawSuccess = false
+  let sawFailure = false
+
+  for (let seed = 1; seed <= 100; seed += 1) {
     const session = new Session(seed)
     const attempted = session.issues.spawnInitialIssue()
     const option = attempted.options[0]
@@ -23,12 +26,23 @@ test('선택지를 시도하면 성공·실패와 무관하게 다른 이슈 하
 
     const outcome = session.resolveChoice(attempted, option)
     assert.ok(outcome)
-    assert.equal(outcome.spawnedNew, true)
 
     const newlyOpened = session.issues.openIssues.filter((issue) => issue.code !== attempted.code)
-    assert.equal(newlyOpened.length, 1)
-    assert.equal(session.issues.count, outcome.solved ? 1 : 2)
+    if (outcome.solved) {
+      sawSuccess = true
+      assert.equal(outcome.spawnedNew, true)
+      assert.equal(newlyOpened.length, 1)
+      assert.equal(session.issues.count, 1)
+    } else {
+      sawFailure = true
+      assert.equal(outcome.spawnedNew, false)
+      assert.equal(newlyOpened.length, 0)
+      assert.equal(session.issues.count, 1)
+    }
   }
+
+  assert.equal(sawSuccess, true)
+  assert.equal(sawFailure, true)
 })
 
 test('시간만 흘러서는 새로운 일반 이슈가 열리지 않는다', () => {

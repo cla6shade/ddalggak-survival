@@ -4,11 +4,11 @@
     {
       "seed": 1,
       "policy": "fixer",
-      "result": "hacked",
-      "days": 1,
-      "steps": 8,
-      "issuesSolved": 3,
-      "finalRngState": -383647181
+      "result": "idea-stolen",
+      "days": 8,
+      "steps": 39,
+      "issuesSolved": 13,
+      "finalRngState": 1312459938
     },
     {
       "seed": 2,
@@ -22,65 +22,65 @@
     {
       "seed": 3,
       "policy": "fixer",
-      "result": "hacked",
-      "days": 3,
-      "steps": 14,
+      "result": "survived",
+      "days": 61,
+      "steps": 82714,
       "issuesSolved": 6,
-      "finalRngState": 1256095043
+      "finalRngState": -566481308
     },
     {
       "seed": 1,
       "policy": "grinder",
-      "result": "hacked",
-      "days": 2,
-      "steps": 10,
-      "issuesSolved": 5,
-      "finalRngState": 184247292
-    },
-    {
-      "seed": 2,
-      "policy": "grinder",
-      "result": "hacked",
-      "days": 1,
-      "steps": 9,
-      "issuesSolved": 3,
-      "finalRngState": 1511859830
-    },
-    {
-      "seed": 3,
-      "policy": "grinder",
-      "result": "lawsuit",
-      "days": 3,
-      "steps": 8,
-      "issuesSolved": 4,
-      "finalRngState": 2143695501
-    },
-    {
-      "seed": 1,
-      "policy": "clicker",
       "result": "data-leak",
       "days": 1,
-      "steps": 13,
+      "steps": 4,
+      "issuesSolved": 2,
+      "finalRngState": -759718063
+    },
+    {
+      "seed": 2,
+      "policy": "grinder",
+      "result": "consumer-report",
+      "days": 15,
+      "steps": 80,
+      "issuesSolved": 12,
+      "finalRngState": -1350341435
+    },
+    {
+      "seed": 3,
+      "policy": "grinder",
+      "result": "data-leak",
+      "days": 6,
+      "steps": 25,
       "issuesSolved": 8,
-      "finalRngState": 1760048317
+      "finalRngState": 936389058
+    },
+    {
+      "seed": 1,
+      "policy": "clicker",
+      "result": "hacked",
+      "days": 1,
+      "steps": 5,
+      "issuesSolved": 3,
+      "finalRngState": -823659260
     },
     {
       "seed": 2,
       "policy": "clicker",
-      "result": "hacked",
-      "days": 1,
-      "steps": 6,
-      "issuesSolved": 4,
-      "finalRngState": -1455494929
+      "result": "survived",
+      "days": 61,
+      "steps": 84570,
+      "issuesSolved": 9,
+      "finalRngState": -1786524261
     },
     {
       "seed": 3,
       "policy": "clicker",
-      "result": "consumer-report",
-      "days": 1,
-      "steps": 13,
+      "result": "survived",
+      "days": 61,
+      "steps": 86029,
       "issuesSolved": 6,
-      "finalRngState": 1256095043
+      "finalRngState": -1945626560
     },
     {
       "seed": 1,
@@ -103,38 +103,38 @@
     {
       "seed": 3,
       "policy": "careful",
-      "result": "data-leak",
-      "days": 2,
-      "steps": 8,
+      "result": "survived",
+      "days": 61,
+      "steps": 85057,
       "issuesSolved": 4,
-      "finalRngState": 943965358
+      "finalRngState": -1583793572
     },
     {
       "seed": 1,
       "policy": "rusher",
       "result": "hacked",
       "days": 1,
-      "steps": 8,
-      "issuesSolved": 3,
-      "finalRngState": -383647181
+      "steps": 549,
+      "issuesSolved": 2,
+      "finalRngState": -1573384933
     },
     {
       "seed": 2,
       "policy": "rusher",
-      "result": "consumer-report",
+      "result": "hacked",
       "days": 2,
-      "steps": 15,
-      "issuesSolved": 7,
-      "finalRngState": -1143365244
+      "steps": 9,
+      "issuesSolved": 5,
+      "finalRngState": 312129687
     },
     {
       "seed": 3,
       "policy": "rusher",
-      "result": "idea-stolen",
-      "days": 1,
-      "steps": 3,
-      "issuesSolved": 2,
-      "finalRngState": -1959448204
+      "result": "data-leak",
+      "days": 2,
+      "steps": 10,
+      "issuesSolved": 3,
+      "finalRngState": 2143695501
     },
     {
       "seed": 1,
@@ -152,16 +152,16 @@
       "days": 1,
       "steps": 3,
       "issuesSolved": 2,
-      "finalRngState": -1959448205
+      "finalRngState": 503953278
     },
     {
       "seed": 3,
       "policy": "random",
       "result": "burnout",
       "days": 2,
-      "steps": 11,
-      "issuesSolved": 2,
-      "finalRngState": 2079754304
+      "steps": 7,
+      "issuesSolved": 1,
+      "finalRngState": 1639742225
     },
     {
       "seed": 1,
@@ -193,56 +193,56 @@
     {
       "seed": 1,
       "policy": "survival",
-      "result": "consumer-report",
+      "result": "hacked",
       "days": 1,
-      "steps": 12,
-      "issuesSolved": 4,
-      "finalRngState": 1256095041
+      "steps": 5,
+      "issuesSolved": 3,
+      "finalRngState": -823659260
     },
     {
       "seed": 2,
       "policy": "survival",
       "result": "hacked",
-      "days": 1,
-      "steps": 20,
-      "issuesSolved": 7,
-      "finalRngState": -1839142111
+      "days": 2,
+      "steps": 26,
+      "issuesSolved": 8,
+      "finalRngState": -767294362
     },
     {
       "seed": 3,
       "policy": "survival",
       "result": "consumer-report",
-      "days": 1,
-      "steps": 8,
-      "issuesSolved": 6,
-      "finalRngState": -319705982
+      "days": 5,
+      "steps": 72,
+      "issuesSolved": 16,
+      "finalRngState": 729412867
     },
     {
       "seed": 1,
       "policy": "ddalggak",
-      "result": "consumer-report",
+      "result": "hacked",
       "days": 1,
-      "steps": 15,
-      "issuesSolved": 8,
-      "finalRngState": -767294363
+      "steps": 5,
+      "issuesSolved": 3,
+      "finalRngState": -823659260
     },
     {
       "seed": 2,
       "policy": "ddalggak",
-      "result": "data-leak",
-      "days": 1,
-      "steps": 18,
-      "issuesSolved": 9,
-      "finalRngState": -2030965702
+      "result": "hacked",
+      "days": 2,
+      "steps": 20,
+      "issuesSolved": 11,
+      "finalRngState": -767294362
     },
     {
       "seed": 3,
       "policy": "ddalggak",
-      "result": "consumer-report",
-      "days": 1,
-      "steps": 15,
-      "issuesSolved": 8,
-      "finalRngState": 936389058
+      "result": "data-leak",
+      "days": 9,
+      "steps": 86,
+      "issuesSolved": 31,
+      "finalRngState": -1613682522
     }
   ]
 }
