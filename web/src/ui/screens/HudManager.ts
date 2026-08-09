@@ -2,6 +2,7 @@ import { UiElement } from '../UiElement'
 import { HudRow } from '../primitives/HudRow'
 import { ClockTile } from '../tiles/ClockTile'
 import { ResourceTile } from '../tiles/ResourceTile'
+import { CreditTile } from '../tiles/CreditTile'
 import { StaminaTile } from '../tiles/StaminaTile'
 import { MetricTile } from '../tiles/MetricTile'
 import { RateTile } from '../tiles/RateTile'
@@ -26,20 +27,21 @@ export class HudManager extends UiElement<'header'> {
   private readonly clock: ClockTile
   private readonly money: ResourceTile
   private readonly stamina: StaminaTile
-  private readonly credit: ResourceTile
+  private readonly credit: CreditTile
   private readonly users: MetricTile
   private readonly userGrowth: RateTile
   private readonly revenueRate: RateTile
   private readonly serverCostRate: RateTile
 
-  constructor(icons: IconSheet) {
+  /** 크레딧 타일은 값을 보여 주기만 하고, 눌리면 구매 창을 여는 쪽에 넘깁니다. */
+  constructor(icons: IconSheet, onOpenCreditShop: () => void) {
     super('header', 'hud')
 
     this.clock = new ClockTile(icons)
 
     this.money = new ResourceTile(icons, 'money', 'resource_money', '잔고', WARN_AT.money)
     this.stamina = new StaminaTile(icons, MAX_STAMINA, WARN_AT.stamina)
-    this.credit = new ResourceTile(icons, 'credit', 'resource_credit', '크레딧', WARN_AT.credit)
+    this.credit = new CreditTile(icons, WARN_AT.credit, onOpenCreditShop)
 
     this.users = new MetricTile(icons, 'metric_users', '이용자 수', true)
     this.userGrowth = new RateTile(icons, 'metric_user_growth', '이용자 증가율')

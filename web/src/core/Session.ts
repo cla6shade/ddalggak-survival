@@ -7,6 +7,7 @@ import { Clock } from '@/game/Clock'
 import { PlayerStatus } from '@/game/stats/PlayerStatus'
 import { ProductStatus } from '@/game/stats/ProductStatus'
 import { IssueManager } from '@/game/IssueManager'
+import { CreditShop } from '@/game/CreditShop'
 import { RoomActionMenus } from '@/game/actions/RoomActionCatalog'
 import { advanceEconomy } from '@/game/economy'
 import { MAX_QUALITY } from '@/game/calc/quality'
@@ -23,6 +24,7 @@ import { EndingCurtain } from '@/ui/screens/EndingCurtain'
 import { EndingManager } from '@/game/endings/EndingManager'
 import { rollsLawsuit } from '@/game/endings/EndingEvents'
 import type { EndingId, EndingResult } from '@/game/endings/Ending'
+import type { CreditBundle } from '@/game/CreditShop'
 import type { Issue, ResolveOutcome } from '@/game/issues/Issue'
 import type { IssueOption } from '@/game/issues/IssueOption'
 import type { ActionOutcome, RoomAction, RoomActionMenu } from '@/game/actions/RoomAction'
@@ -50,14 +52,15 @@ export class Session {
   readonly product = new ProductStatus()
 
   /**
-   * 아래 넷은 생성자 본문에서 세웁니다 — `rng` 는 시드를 인자로 받아야 하고,
-   * 나머지 셋은 `this` 를 받아야 합니다. 필드 초기자는 선언 순서대로 도는 탓에
+   * 아래 다섯은 생성자 본문에서 세웁니다 — `rng` 는 시드를 인자로 받아야 하고,
+   * 나머지 넷은 `this` 를 받아야 합니다. 필드 초기자는 선언 순서대로 도는 탓에
    * 뒤에 선언된 `player`·`rng` 가 아직 `undefined` 인 채로 넘어갑니다.
    */
   readonly rng: Rng
   readonly issues: IssueManager
   readonly endings: EndingManager
   readonly menus: RoomActionMenus
+  readonly shop: CreditShop
 
   /** 어제의 앱. 첫날에는 없습니다 — `0` 과 "어제 없음" 은 다른 말입니다. */
   yesterday: ProductStatus | null = null
@@ -90,6 +93,7 @@ export class Session {
     this.issues = new IssueManager(this)
     this.endings = new EndingManager(this)
     this.menus = new RoomActionMenus(this)
+    this.shop = new CreditShop(this)
   }
 
   /** 판이 끝났는지. 끝난 판은 무엇을 불러도 움직이지 않습니다. */
@@ -124,7 +128,7 @@ export class Session {
       this.toasts = new ToastStack()
       this.endingScreen = new EndingScreen(this.icons, () => window.location.reload())
       this.curtain = new EndingCurtain(this.assets)
-      this.hud = new HudManager(this.icons)
+      this.hud = new HudManager(this.icons, () => this.openCreditShop())
       this.issueButton = new IssueButton(this.icons, () => this.sheet?.toggle())
       this.hud.mountTo(root)
       this.issueButton.mountTo(root)
@@ -279,6 +283,38 @@ export class Session {
     this.save(true)
 
     return outcome
+  }
+
+  /** 계기판의 크레딧 타일을 눌렀습니다. 파는 묶음들을 폅니다. */
+  openCreditShop(): void {
+    if (this.phase !== 'running') return
+    this.sheet?.showShop()
+  }
+
+  /**
+   * 구매 창에서 묶음 하나를 눌렀습니다.
+   *
+   * 방 행동과 달리 시계를 밀지 않습니다 — 앉은 자리에서 결제만 하는 일이라
+   * 걸어갈 곳도, 흘려보낼 시간도 없습니다. 잔고가 0 이 될 수는 있으므로
+   * 엔딩 판정은 다른 지출과 똑같이 거칩니다.
+   *
+   * 산 만큼 딸깍의 잠금이 풀려야 하니 판까지 다시 그립니다.
+   */
+  buyCredit(bundle: CreditBundle): void {
+    if (this.phase !== 'running') return
+
+    const cost = bundle.cost.toLocaleString('ko-KR')
+    // 창이 열린 사이에 잔고가 떨어졌을 수 있습니다. 잠긴 줄은 그때 다시 그려지지 않습니다.
+    if (!bundle.buy()) {
+      this.notify('잔고 부족', `크레딧 ${bundle.amount}개 · ${cost}원`, 'bad')
+      return
+    }
+
+    this.notify('크레딧 충전', `크레딧 +${bundle.amount} · −${cost}원`, 'good')
+    if (this.checkEnding()) return
+
+    this.refreshHud()
+    this.save(true)
   }
 
   /**

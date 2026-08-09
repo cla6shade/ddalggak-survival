@@ -371,6 +371,23 @@ img.icon {
   color: var(--down);
 }
 
+/* 크레딧만 눌러서 채웁니다 — 카드째 버튼이라, 누를 수 있다는 표시도 카드가 냅니다.
+   시트의 줄들과 같은 손짓·같은 밝아짐을 씁니다. "여기서도 누르면 된다"를 두 번
+   배우지 않아야 합니다. */
+.resource--pressable {
+  cursor: pointer;
+  transition: background 120ms var(--ease);
+}
+
+.resource--pressable:hover {
+  background: var(--surface-raised);
+}
+
+.resource--pressable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 /* 지표 — 어제와 비교하는 값이라 자원보다 한 단 낮게 깝니다. 알약 하나가 문장 하나라
    가운데로 모읍니다.
    간격은 gap 이 아니라 각자의 margin 입니다 — "매출"과 "0"은 떨어져야 하고

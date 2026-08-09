@@ -15,12 +15,12 @@ interface CostChip {
 }
 
 /**
- * 화면 아래에서 떠오르는 판 하나. 세 화면을 오갑니다 —
- * 열린 이슈 목록, 고른 이슈의 대응책, 그리고 방 물건 앞에서 할 수 있는 것들.
+ * 화면 아래에서 떠오르는 판 하나. 네 화면을 오갑니다 — 열린 이슈 목록, 고른 이슈의
+ * 대응책, 방 물건 앞에서 할 수 있는 것들, 그리고 크레딧 구매 창.
  *
- * `menu` 가 있으면 방 행동 화면, 없고 `selected` 가 있으면 대응책 화면,
- * 둘 다 없으면 이슈 목록입니다. 판을 하나만 두는 이유는 두 장이 동시에 열리면
- * 서로의 바깥 층이 상대의 클릭을 삼키기 때문입니다.
+ * `shopping` 이면 구매 창, `menu` 가 있으면 방 행동 화면, 없고 `selected` 가 있으면
+ * 대응책 화면, 아무것도 없으면 이슈 목록입니다. 판을 하나만 두는 이유는 두 장이
+ * 동시에 열리면 서로의 바깥 층이 상대의 클릭을 삼키기 때문입니다.
  *
  * 바깥 층(`scrim`)은 판 밖을 눌러 닫는 자리이자, 방과 계기판을 한 겹 눌러 두는
  * 그늘입니다 — 눌러 두지 않으면 위쪽 계기판이 판과 같은 무게로 읽힙니다.
@@ -38,6 +38,8 @@ export class BottomSheet extends UiElement<'div'> {
   private menu: RoomActionMenu | null = null
   /** 지금 대응책을 펼쳐 둔 이슈. `null` 이면 목록 화면입니다. */
   private selected: Issue | null = null
+  /** 크레딧 구매 창을 펴 둔 상태인지. 다른 화면보다 먼저 봅니다. */
+  private shopping = false
   private isOpen = false
 
   constructor() {
@@ -84,13 +86,14 @@ export class BottomSheet extends UiElement<'div'> {
 
   /** 계기판의 알림 버튼. 이슈 화면이 떠 있으면 닫고, 아니면 이슈 목록을 폅니다. */
   toggle(): void {
-    if (this.isOpen && this.menu === null) this.hide()
+    if (this.isOpen && this.menu === null && !this.shopping) this.hide()
     else this.showIssues()
   }
 
   showIssues(): void {
     this.menu = null
     this.selected = null
+    this.shopping = false
     this.open()
   }
 
@@ -98,6 +101,15 @@ export class BottomSheet extends UiElement<'div'> {
   showMenu(menu: RoomActionMenu): void {
     this.menu = menu
     this.selected = null
+    this.shopping = false
+    this.open()
+  }
+
+  /** 계기판의 크레딧 타일을 눌렀습니다. 파는 묶음들을 폅니다. */
+  showShop(): void {
+    this.menu = null
+    this.selected = null
+    this.shopping = true
     this.open()
   }
 
@@ -109,6 +121,13 @@ export class BottomSheet extends UiElement<'div'> {
   /** 세션이 무엇이든 바꿨을 때. 열려 있지 않으면 그릴 이유가 없습니다. */
   render(): void {
     if (!this.isOpen) return
+
+    if (this.shopping) {
+      this.renderHead('크레딧 구매', false)
+      this.rows.replaceChildren(...this.renderBundleRows())
+
+      return
+    }
 
     if (this.menu) {
       this.renderHead(this.menu.title, false)
@@ -199,6 +218,29 @@ export class BottomSheet extends UiElement<'div'> {
 
       row.append(odds, kind)
       row.addEventListener('click', () => session.chooseOption(issue, option))
+
+      return row
+    })
+  }
+
+  /**
+   * 크레딧 구매 화면 — 파는 묶음마다 한 줄.
+   *
+   * 개수를 왼쪽 큰 글씨에, 값을 그 아래에 답니다. 잔고가 모자란 묶음은 대응책과
+   * 같은 규칙으로 잠급니다 — 여기서만 다르게 굴면 잠긴 줄을 두 번 배웁니다.
+   */
+  private renderBundleRows(): HTMLElement[] {
+    return session.shop.bundles.map((bundle) => {
+      const row = this.createOptionRow(
+        `크레딧 ${bundle.amount}개`,
+        createChipRow([
+          { frame: 'resource_money', text: `-${bundle.cost.toLocaleString('ko-KR')}원` },
+        ]),
+        !bundle.canAfford(),
+      )
+
+      row.append(createSpan('odds__value', ''), createSpan('kind', '충전'))
+      row.addEventListener('click', () => session.buyCredit(bundle))
 
       return row
     })
