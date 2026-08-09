@@ -17,6 +17,7 @@ import { HudManager } from '@/ui/screens/HudManager'
 import { IssueButton } from '@/ui/screens/IssueButton'
 import { BottomSheet } from '@/ui/screens/BottomSheet'
 import { ToastStack } from '@/ui/screens/ToastStack'
+import type { ToastTone } from '@/ui/screens/ToastStack'
 import { EndingScreen } from '@/ui/screens/EndingScreen'
 import { EndingCurtain } from '@/ui/screens/EndingCurtain'
 import { EndingManager } from '@/game/endings/EndingManager'
@@ -189,6 +190,17 @@ export class Session {
     this.save(true)
   }
 
+  /**
+   * 이슈 판이 열렸습니다. 떠 있던 알림을 걷습니다.
+   *
+   * 알림도 판도 이슈 버튼 바로 위에 서므로 둘이 겹칩니다. 판을 여는 것은
+   * 지금 뭘 고를지 보겠다는 뜻이니, 방금 지나간 소식 쪽을 접습니다.
+   * 판이 스스로 부릅니다 — 여는 길이 버튼·책상·물건으로 여럿입니다.
+   */
+  dismissToasts(): void {
+    this.toasts?.clear()
+  }
+
   /** 이슈처럼 스스로 상태를 들고 있는 쪽이 바뀌었을 때 부릅니다. */
   refreshHud(): void {
     this.hud?.render(this.clock, this.player, this.product, this.yesterday)
@@ -248,11 +260,11 @@ export class Session {
     const outcome = action.perform()
     // 판이 열린 사이에 잔고가 떨어졌을 수 있습니다. 잠긴 줄은 그때 다시 그려지지 않습니다.
     if (outcome.blocked) {
-      this.toasts?.push('잔고 부족', action.title, 'bad')
+      this.notify('잔고 부족', action.title, 'bad')
       return outcome
     }
 
-    this.toasts?.push(action.title, formatActionOutcome(outcome), 'good')
+    this.notify(action.title, formatActionOutcome(outcome), 'good')
 
     // 행동 값으로 자원이 바닥난 순간 먼저 끝냅니다. 아래 시간 정산에서
     // 매출이 들어와 0원을 잠시 지나친 사실이 사라지면 "바닥나면 종료"가 아닙니다.
@@ -295,14 +307,14 @@ export class Session {
     if (outcome.solved) {
       this.issues.solve(issue.code)
       this.product.quality = Math.min(MAX_QUALITY, this.product.quality + outcome.qualityGain)
-      this.toasts?.push('해결', `${issue.title} · 품질 +${outcome.qualityGain}`, 'good')
+      this.notify('해결', `${issue.title} · 품질 +${outcome.qualityGain}`, 'good')
 
       // 하나를 해결했을 때만, 방금 해결한 것과 다른 이슈를 하나 엽니다.
       const spawned = this.issues.spawnRandomIssue(issue.code)
       outcome.spawnedNew = spawned !== null
       if (spawned) this.showIssueToast(spawned)
     } else {
-      this.toasts?.push('실패', option.title, 'bad')
+      this.notify('실패', option.title, 'bad')
     }
 
     // 기존 자원 고갈 엔딩을 확률 사건보다 먼저 확정합니다.
@@ -389,9 +401,21 @@ export class Session {
     this.config.save(Savepoint.capture(this))
   }
 
+  /**
+   * 알림 한 장을 세웁니다.
+   *
+   * 세우기 전에 이슈 판을 걷습니다 — 둘 다 이슈 버튼 위에 서서 자리가 겹치고,
+   * 방금 벌어진 일을 읽는 동안 고를 것을 같이 들이밀면 어느 쪽도 읽히지 않습니다.
+   * 알림을 띄우는 입구를 여기 하나로 모아 두는 이유이기도 합니다.
+   */
+  private notify(title: string, body: string, tone: ToastTone = 'issue'): void {
+    this.sheet?.hide()
+    this.toasts?.push(title, body, tone)
+  }
+
   /** 터진 이슈 하나를 화면에 알립니다 — 토스트, 이슈 버튼, 열려 있는 판. */
   private showIssueToast(issue: Issue): void {
-    this.toasts?.push('이슈 발생', issue.title)
+    this.notify('이슈 발생', issue.title)
     this.issueButton?.setIssues(this.issues)
     this.issueButton?.ping()
     this.sheet?.render()

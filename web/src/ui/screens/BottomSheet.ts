@@ -22,7 +22,8 @@ interface CostChip {
  * 둘 다 없으면 이슈 목록입니다. 판을 하나만 두는 이유는 두 장이 동시에 열리면
  * 서로의 바깥 층이 상대의 클릭을 삼키기 때문입니다.
  *
- * 바깥 층(`scrim`)은 판 밖을 눌러 닫기 위한 것입니다.
+ * 바깥 층(`scrim`)은 판 밖을 눌러 닫는 자리이자, 방과 계기판을 한 겹 눌러 두는
+ * 그늘입니다 — 눌러 두지 않으면 위쪽 계기판이 판과 같은 무게로 읽힙니다.
  * 값을 스스로 만들지 않고 `session` 에서 읽어 그리기만 하며,
  * 누르면 `session` 으로 도로 넘깁니다.
  */
@@ -143,7 +144,9 @@ export class BottomSheet extends UiElement<'div'> {
     return description
   }
 
+  /** 여는 길이 버튼·책상·물건으로 여럿이라, 셋이 다 지나가는 여기서 알림을 걷습니다. */
   private open(): void {
+    session.dismissToasts()
     this.isOpen = true
     this.toggleClass('scrim--hidden', false)
     this.render()

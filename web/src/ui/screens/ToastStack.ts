@@ -12,7 +12,8 @@ const MAX_VISIBLE = 3
 export type ToastTone = 'issue' | 'good' | 'bad'
 
 /**
- * 방금 무슨 일이 있었는지 화면 맨 위에 쌓아 올립니다. 입력은 받지 않습니다.
+ * 방금 무슨 일이 있었는지 이슈 버튼 바로 위에 쌓아 올립니다. 입력은 받지 않습니다.
+ * 눈이 이미 손가락 쪽에 있고, 계기판 밑에 세우면 자원·지표 숫자에 묻힙니다.
  *
  * 이슈는 선택 결과와 함께 새로 터집니다. 계기판의 숫자만 1 올라가서는
  * **무엇이** 생겼는지 알 수 없어서, 터진 순간 이름을 보여 줍니다.
@@ -41,6 +42,18 @@ export class ToastStack extends UiElement<'div'> {
 
     for (const stale of this.live.slice(0, -MAX_VISIBLE)) this.dismiss(stale)
     window.setTimeout(() => this.dismiss(card), LIFETIME)
+  }
+
+  /**
+   * 서 있는 것을 전부 걷습니다.
+   *
+   * 이슈 판이 같은 자리에 서기 때문입니다 — 판이 열리면 알림은 그 아래 깔려
+   * 읽히지도, 닫히는 것도 보이지도 않습니다.
+   *
+   * 걷는 사이에 {@link live} 가 줄어들므로 사본을 돕니다.
+   */
+  clear(): void {
+    for (const card of [...this.live]) this.dismiss(card)
   }
 
   /** 한 장을 걷습니다. 이미 걷힌 장은 그냥 지나갑니다 — 수명과 밀려남이 겹칩니다. */
